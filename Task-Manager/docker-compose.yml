@@ -1,0 +1,122 @@
+version: '3.8'
+
+services:
+  # Auth Service
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ./apps/auth-service  # ✅ Contexto específico do serviço
+      dockerfile: dockerfile
+      target: development
+    ports:
+      - '3002:3002'
+    volumes:
+      - ./apps/auth-service:/app  # ✅ Montar volume
+      - /app/node_modules 
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=207703
+      - DATABASE_NAME=task_manager_auth
+      - JWT_SECRET=96f35662f185ab2ac76b0d932516a5ba
+      - JWT_EXPIRES_IN=15m
+      - JWT_REFRESH_SECRET=df7bc93e81dc8a30e48bddd96b7e3bc2
+      - JWT_REFRESH_EXPIRES_IN=7d
+    depends_on:
+      - db
+    networks:
+      - challenge-network
+
+  # API Gateway
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: ./apps/api-gateway  # ✅ Contexto específico
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - '3001:3001'
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+    depends_on:
+      - auth-service
+      - db
+    networks:
+      - challenge-network
+
+  # Tasks Service
+  tasks-service:
+    container_name: tasks-service
+    build:
+      context: ./apps/tasks-service  # ✅ Contexto específico
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - '3003:3003'
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+    depends_on:
+      - db
+    networks:
+      - challenge-network
+
+  # Notifications Service
+  notifications-service:
+    container_name: notifications-service
+    build:
+      context: ./apps/notifications-service  # ✅ Contexto específico
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - '3004:3004'
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+    depends_on:
+      - db
+    networks:
+      - challenge-network
+
+  # Frontend Web
+  web:
+    container_name: web
+    build:
+      context: ./apps/web  # ✅ Contexto específico
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=development
+    networks:
+      - challenge-network
+
+  # Postgres Database
+  db:
+    image: postgres:15-alpine
+    container_name: db
+    ports:
+      - '5432:5432'
+    networks:
+      - challenge-network
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    environment:
+      POSTGRES_PASSWORD: 207703
+      POSTGRES_USER: postgres
+      POSTGRES_DB: localhost
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  challenge-network:
+    driver: bridge

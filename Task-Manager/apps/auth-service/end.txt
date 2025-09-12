@@ -1,0 +1,14 @@
+# Health Check
+GET http://localhost:3002/
+
+# Autenticação
+POST http://localhost:3002/auth/register
+POST http://localhost:3002/auth/login  
+POST http://localhost:3002/auth/refresh
+
+# Usuários
+GET    http://localhost:3002/users
+POST   http://localhost:3002/users
+GET    http://localhost:3002/users/:id
+PATCH  http://localhost:3002/users/:id
+DELETE http://localhost:3002/users/:id
