@@ -2,15 +2,19 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Repository } from 'typeorm';
 import { UsersService } from '../../users/service/users.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { AuthResponseDto } from '../dto/auth-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { JwtPayload } from '../strategies/jwt.strategy';
+
 
 @Injectable()
 export class AuthService {

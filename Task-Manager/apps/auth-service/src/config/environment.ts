@@ -15,6 +15,10 @@ export interface EnvironmentVariables {
   JWT_REFRESH_SECRET: string;
   JWT_ACCESS_EXPIRE: string;
   JWT_REFRESH_EXPIRE: string;
+
+  // RabbitMQ
+  RABBITMQ_URL: string;
+  FRONTEND_URL: string;
 }
 
 export const environmentConfig = () => ({
@@ -34,5 +38,13 @@ export const environmentConfig = () => ({
     refreshSecret: process.env.JWT_REFRESH_SECRET,
     accessExpire: process.env.JWT_ACCESS_EXPIRE,
     refreshExpire: process.env.JWT_REFRESH_EXPIRE,
+  },
+
+  rabbitmq: {
+    url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
+  },
+
+  frontend: {
+    url: process.env.FRONTEND_URL || 'http://localhost:3000',
   },
 });

@@ -12,7 +12,7 @@ import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { AuthResponseDto } from '../dto/auth-response.dto';
-import {ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 
 @Controller('auth')

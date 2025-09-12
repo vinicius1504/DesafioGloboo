@@ -11,15 +11,15 @@ services:
     ports:
       - '3002:3002'
     volumes:
-      - ./apps/auth-service:/app  # ✅ Montar volume
+      -  ./apps/auth-service:/app  # ✅ Montar volume
       - /app/node_modules 
     environment:
       - NODE_ENV=development
       - PORT=3002
-      - DATABASE_HOST=db
+      - DATABASE_HOST=bd
       - DATABASE_PORT=5432
       - DATABASE_USERNAME=postgres
-      - DATABASE_PASSWORD=207704
+      - DATABASE_PASSWORD=password
       - DATABASE_NAME=task_manager_bd
       - JWT_SECRET=96f35662f185ab2ac76b0d932516a5ba
       - JWT_EXPIRES_IN=15m
@@ -30,76 +30,62 @@ services:
     networks:
       - challenge-network
 
-  # API Gateway
-  api-gateway:
-    container_name: api-gateway
-    build:
-      context: ./apps/api-gateway  # ✅ Contexto específico
-      dockerfile: Dockerfile
-      target: development
-    ports:
-      - '3001:3001'
-    environment:
-      - NODE_ENV=development
-      - PORT=3001
-    depends_on:
-      - auth-service
-      - db
-    networks:
-      - challenge-network
 
   # Tasks Service
   tasks-service:
     container_name: tasks-service
     build:
-      context: ./apps/tasks-service  # ✅ Contexto específico
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./apps/tasks-service/Dockerfile
       target: development
     ports:
       - '3003:3003'
+    volumes:
+      - .:/app
+      - ./packages:/app/packages
+      - /app/node_modules
+      - /app/apps/tasks-service/node_modules
     environment:
       - NODE_ENV=development
-      - PORT=3003
+      - PORT=3002
+      - DATABASE_HOST=bd
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=password
+      - DATABASE_NAME=task_manager_bd
+      - JWT_SECRET=96f35662f185ab2ac76b0d932516a5ba
+      - JWT_EXPIRES_IN=15m
+      - JWT_REFRESH_SECRET=df7bc93e81dc8a30e48bddd96b7e3bc2
+      - JWT_REFRESH_EXPIRES_IN=7d
     depends_on:
-      - db
+      db:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
     networks:
       - challenge-network
 
-  # Notifications Service
-  notifications-service:
-    container_name: notifications-service
-    build:
-      context: ./apps/notifications-service  # ✅ Contexto específico
-      dockerfile: Dockerfile
-      target: development
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    attach: false
+    restart: always
     ports:
-      - '3004:3004'
-    environment:
-      - NODE_ENV=development
-      - PORT=3004
-    depends_on:
-      - db
+      - '5672:5672'
+      - '15672:15672'
     networks:
       - challenge-network
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes: ['rabbitmq_data:/var/lib/rabbitmq']
 
-  # Frontend Web
-  web:
-    container_name: web
-    build:
-      context: ./apps/web  # ✅ Contexto específico
-      dockerfile: Dockerfile
-      target: development
-    ports:
-      - '3000:3000'
-    environment:
-      - NODE_ENV=development
-    networks:
-      - challenge-network
 
   # Postgres Database
   db:
     image: postgres:15-alpine
-    container_name: db
+    container_name: bd
     ports:
       - '5432:5432'
     networks:
@@ -109,7 +95,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     environment:
-      POSTGRES_PASSWORD: 207704
+      POSTGRES_PASSWORD: password
       POSTGRES_USER: postgres
       POSTGRES_DB: task_manager_bd
 
@@ -120,3 +106,5 @@ volumes:
 networks:
   challenge-network:
     driver: bridge
+
+

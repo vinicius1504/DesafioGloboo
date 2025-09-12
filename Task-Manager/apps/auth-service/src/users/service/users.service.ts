@@ -98,6 +98,13 @@ async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     return bcrypt.compare(plainPassword, hashedPassword);
   }
 
+  async updatePassword(userId: string, newPassword: string): Promise<void> {
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    
+    await this.userRepository.update(userId, { password: hashedPassword });
+  }
+
   async setCurrentRefreshToken(hashedToken: string, userId: string): Promise<void> {
     await this.userRepository.update(userId, {
       // Note: currentHashedRefreshToken field needs to be added to User entity if needed
