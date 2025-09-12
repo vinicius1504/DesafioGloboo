@@ -19,8 +19,8 @@ services:
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
       - DATABASE_USERNAME=postgres
-      - DATABASE_PASSWORD=207703
-      - DATABASE_NAME=task_manager_auth
+      - DATABASE_PASSWORD=207704
+      - DATABASE_NAME=task_manager_bd
       - JWT_SECRET=96f35662f185ab2ac76b0d932516a5ba
       - JWT_EXPIRES_IN=15m
       - JWT_REFRESH_SECRET=df7bc93e81dc8a30e48bddd96b7e3bc2
@@ -109,9 +109,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     environment:
-      POSTGRES_PASSWORD: 207703
+      POSTGRES_PASSWORD: 207704
       POSTGRES_USER: postgres
-      POSTGRES_DB: localhost
+      POSTGRES_DB: task_manager_bd
 
 volumes:
   postgres_data:
