@@ -35,7 +35,10 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   constructor(private readonly rabbitMQService: RabbitMQService) {}
 
   async onModuleInit() {
-    this.setupRabbitMQConsumer();
+    // Delay setup to ensure RabbitMQ is initialized
+    setTimeout(() => {
+      this.setupRabbitMQConsumer();
+    }, 2000);
   }
 
   async handleConnection(client: Socket) {
@@ -62,32 +65,41 @@ export class TaskGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   }
 
   private setupRabbitMQConsumer() {
-    // Consume task events from RabbitMQ
-    this.rabbitMQService.consumeTaskEvents(async (event: TaskEvent) => {
-      try {
-        this.logger.log(`Received task event: ${event.eventType} for task ${event.taskId}`);
+    try {
+      // Consume task events from RabbitMQ
+      this.rabbitMQService.consumeTaskEvents(async (event: TaskEvent) => {
+        try {
+          this.logger.log(`Received task event: ${event.eventType} for task ${event.taskId}`);
 
-        // Map RabbitMQ event types to WebSocket event types
-        const wsEventType = event.eventType.replace('.', ':') as WebSocketTaskEvent['eventType'];
+          // Map RabbitMQ event types to WebSocket event types
+          const wsEventType = event.eventType.replace('.', ':') as WebSocketTaskEvent['eventType'];
 
-        // Broadcast to all clients in the task room
-        this.server.to(`task-${event.taskId}`).emit(wsEventType, {
-          taskId: event.taskId,
-          data: event.data,
-          timestamp: event.timestamp,
-        });
+          // Broadcast to all clients in the task room
+          this.server.to(`task-${event.taskId}`).emit(wsEventType, {
+            taskId: event.taskId,
+            data: event.data,
+            timestamp: event.timestamp,
+          });
 
-        // Also broadcast to a general tasks room for dashboard updates
-        this.server.to('tasks').emit(wsEventType, {
-          taskId: event.taskId,
-          data: event.data,
-          timestamp: event.timestamp,
-        });
+          // Also broadcast to a general tasks room for dashboard updates
+          this.server.to('tasks').emit(wsEventType, {
+            taskId: event.taskId,
+            data: event.data,
+            timestamp: event.timestamp,
+          });
 
-      } catch (error) {
-        this.logger.error(`Error processing task event:`, error);
-      }
-    });
+        } catch (error) {
+          this.logger.error(`Error processing task event:`, error);
+        }
+      });
+    } catch (error) {
+      this.logger.error('Error setting up RabbitMQ consumer:', error);
+      // Retry setup after delay if RabbitMQ is not ready yet
+      setTimeout(() => {
+        this.logger.log('Retrying RabbitMQ consumer setup...');
+        this.setupRabbitMQConsumer();
+      }, 5000);
+    }
   }
 
   // Method to emit events programmatically (can be called from services)

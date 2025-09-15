@@ -14,6 +14,16 @@ export const dataSourceOptions: DataSourceOptions = {
   migrations: ['dist/migrations/*.js'],
   synchronize: false, // Use migrations in production
   logging: process.env.NODE_ENV === 'development',
+  // Connection options for better reliability
+  extra: {
+    // Connection timeout and retry options
+    connectionTimeoutMillis: 60000,
+    query_timeout: 60000,
+    statement_timeout: 60000,
+    idle_in_transaction_session_timeout: 60000,
+    // Retry on connection failure
+    retryOnExit: true,
+  },
 };
 
 const dataSource = new DataSource(dataSourceOptions);

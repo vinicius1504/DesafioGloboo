@@ -14,6 +14,7 @@ import { Task } from './tasks/entities/task.entity';
 import { Comment } from './comments/entities/comment.entity';
 import { User } from './users/entities/user.entity';
 import { dataSourceOptions } from './config/data-source';
+import { JwtStrategy } from './auth/strategies/jwt.strategy';
 
 @Module({
   imports: [
@@ -39,6 +40,6 @@ import { dataSourceOptions } from './config/data-source';
     WebSocketModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, JwtStrategy],
 })
 export class AppModule {}

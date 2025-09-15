@@ -27,7 +27,7 @@ export class RabbitMQService {
 
   private async connect(): Promise<void> {
     try {
-      const rabbitmqUrl = this.configService.get<string>('rabbitmq.url') || 'amqp://localhost:5672';
+      const rabbitmqUrl = this.configService.get<string>('RABBITMQ_URL') || 'amqp://localhost:5672';
 
       this.connection = await connect(rabbitmqUrl);
 

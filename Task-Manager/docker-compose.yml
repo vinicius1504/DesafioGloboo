@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Auth Service
   auth-service:
@@ -25,7 +23,7 @@ services:
       - JWT_EXPIRES_IN=15m
       - JWT_REFRESH_SECRET=df7bc93e81dc8a30e48bddd96b7e3bc2
       - JWT_REFRESH_EXPIRES_IN=7d
-    depends_on:
+    depends_on:   
       - db
     networks:
       - challenge-network
@@ -35,28 +33,27 @@ services:
   tasks-service:
     container_name: tasks-service
     build:
-      context: .
-      dockerfile: ./apps/tasks-service/Dockerfile
+      context: ./apps/tasks-service
+      dockerfile: Dockerfile
       target: development
     ports:
       - '3003:3003'
     volumes:
-      - .:/app
-      - ./packages:/app/packages
+      - ./apps/tasks-service:/app
       - /app/node_modules
-      - /app/apps/tasks-service/node_modules
     environment:
       - NODE_ENV=development
-      - PORT=3002
-      - DATABASE_HOST=bd
-      - DATABASE_PORT=5432
-      - DATABASE_USERNAME=postgres
-      - DATABASE_PASSWORD=password
-      - DATABASE_NAME=task_manager_bd
+      - PORT=3003
+      - DB_HOST=bd
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=password
+      - DB_DATABASE=task_manager_bd
       - JWT_SECRET=96f35662f185ab2ac76b0d932516a5ba
       - JWT_EXPIRES_IN=15m
       - JWT_REFRESH_SECRET=df7bc93e81dc8a30e48bddd96b7e3bc2
       - JWT_REFRESH_EXPIRES_IN=7d
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672
     depends_on:
       db:
         condition: service_started
@@ -101,6 +98,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  rabbitmq_data:
     driver: local
 
 networks:
