@@ -1,98 +1,171 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🔔 Notifications Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+[![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![WebSocket](https://img.shields.io/badge/WebSocket-000000?style=for-the-badge&logo=websocket&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Serviço de notificações em tempo real do Task Manager, responsável por gerenciar e enviar notificações aos usuários via WebSocket e API REST.
 
-## Description
+## 📋 Descrição
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+O Notifications Service é um microserviço dedicado ao gerenciamento de notificações no sistema Task Manager. Ele permite o envio de notificações em tempo real para usuários conectados, utilizando WebSocket para comunicação bidirecional e eficiente.
 
-## Project setup
+## ✨ Funcionalidades
 
-```bash
-$ npm install
-```
+- 📡 **WebSocket Gateway**: Comunicação em tempo real com clientes
+- 📨 **Envio de Notificações**: API para criar e enviar notificações
+- 📊 **Histórico de Notificações**: Armazenamento e consulta de notificações enviadas
+- 🔄 **Integração com Outros Serviços**: Recebe eventos de outros microserviços
+- 🗂️ **Categorização**: Notificações por tipo (tarefa criada, atualizada, etc.)
+- 📱 **Multi-cliente**: Suporte a múltiplos clientes conectados simultaneamente
 
-## Compile and run the project
+## 🛠️ Tecnologias Utilizadas
 
-```bash
-# development
-$ npm run start
+- **NestJS**: Framework para construção de APIs escaláveis
+- **TypeScript**: Tipagem estática e desenvolvimento robusto
+- **WebSocket**: Protocolo para comunicação em tempo real
+- **Socket.IO**: Biblioteca para WebSocket com fallbacks
+- **PostgreSQL**: Banco de dados para persistência
+- **Redis**: Cache e pub/sub para mensagens
+- **Docker**: Containerização do serviço
 
-# watch mode
-$ npm run start:dev
+## 🚀 Instalação e Execução
 
-# production mode
-$ npm run start:prod
-```
+### Pré-requisitos
+- Node.js (versão 18 ou superior)
+- PostgreSQL
+- Redis (opcional para cache avançado)
 
-## Run tests
+### Instalação
 
-```bash
-# unit tests
-$ npm run test
+1. **Clone o repositório e navegue para o serviço**
+   ```bash
+   git clone https://github.com/vinicius1504/DesafioGloboo.git
+   cd DesafioGloboo/Task-Manager/apps/notifications-service
+   ```
 
-# e2e tests
-$ npm run test:e2e
+2. **Instale as dependências**
+   ```bash
+   npm install
+   ```
 
-# test coverage
-$ npm run test:cov
-```
+3. **Configure as variáveis de ambiente**
+   ```bash
+   cp .env.example .env
+   # Edite o arquivo .env com suas configurações de banco e Redis
+   ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Execução
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Desenvolvimento com hot-reload
+npm run start:dev
+
+# Produção
+npm run build
+npm run start:prod
+
+# Com Docker (recomendado)
+docker-compose up notifications-service
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+O serviço estará disponível em:
+- **API REST**: http://localhost:3003
+- **WebSocket**: ws://localhost:3003/notifications
 
-## Resources
+## 📡 API Endpoints
 
-Check out a few resources that may come in handy when working with NestJS:
+### REST API
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/notifications` | Lista todas as notificações |
+| GET | `/notifications/:id` | Obtém uma notificação específica |
+| POST | `/notifications` | Cria uma nova notificação |
+| DELETE | `/notifications/:id` | Remove uma notificação |
 
-## Support
+### WebSocket Events
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+| Evento | Direção | Descrição |
+|--------|---------|-----------|
+| `notification` | Server → Client | Nova notificação recebida |
+| `join` | Client → Server | Cliente se junta a um canal |
+| `leave` | Client → Server | Cliente deixa um canal |
 
-## Stay in touch
+## 🧪 Testes
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+# Testes unitários
+npm run test
 
-## License
+# Testes e2e
+npm run test:e2e
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Cobertura de testes
+npm run test:cov
+```
+
+## 📁 Estrutura do Projeto
+
+```
+notifications-service/
+├── src/
+│   ├── app.controller.spec.ts
+│   ├── app.controller.ts
+│   ├── app.module.ts
+│   ├── app.service.ts
+│   ├── main.ts
+│   └── notifications/
+│       ├── dto/
+│       │   └── create-notification.dto.ts
+│       ├── entities/
+│       │   └── notification.entity.ts
+│       ├── interfaces/
+│       │   └── notification.interface.ts
+│       ├── notifications.controller.spec.ts
+│       ├── notifications.controller.ts
+│       ├── notifications.gateway.ts
+│       ├── notifications.module.ts
+│       └── notifications.service.spec.ts
+│       └── notifications.service.ts
+├── test/
+│   ├── app.e2e-spec.ts
+│   └── jest-e2e.json
+├── logs/
+│   ├── combined.log
+│   └── error.log
+└── Dockerfile
+```
+
+## 🔧 Scripts Disponíveis
+
+- `npm run build` - Compila o projeto TypeScript
+- `npm run start` - Inicia o servidor em modo produção
+- `npm run start:dev` - Inicia o servidor em modo desenvolvimento
+- `npm run start:debug` - Inicia o servidor em modo debug
+- `npm run test` - Executa testes unitários
+- `npm run test:watch` - Executa testes em modo watch
+- `npm run test:cov` - Executa testes com cobertura
+- `npm run test:debug` - Executa testes em modo debug
+- `npm run test:e2e` - Executa testes end-to-end
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](../../LICENSE) para mais detalhes.
+
+## 👥 Autores
+
+- **Vinicius** - *Desenvolvimento inicial* - [vinicius1504](https://github.com/vinicius1504)
+
+---
+
+⭐ Parte do ecossistema Task Manager

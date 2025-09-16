@@ -1,4 +1,37 @@
 services:
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    attach: false
+    restart: always
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - challenge-network
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes: ['rabbitmq_data:/var/lib/rabbitmq']
+
+
+  # Postgres Database
+  db:
+    image: postgres:15-alpine
+    container_name: bd
+    ports:
+      - '5432:5432'
+    networks:
+      - challenge-network
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_DB: task_manager_bd
   # Auth Service
   auth-service:
     container_name: auth-service
@@ -99,39 +132,31 @@ services:
     networks:
       - challenge-network
 
-  # RabbitMQ
-  rabbitmq:
-    image: rabbitmq:3.13-management-alpine
-    container_name: rabbitmq
-    attach: false
-    restart: always
-    ports:
-      - '5672:5672'
-      - '15672:15672'
-    networks:
-      - challenge-network
-    environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin
-    volumes: ['rabbitmq_data:/var/lib/rabbitmq']
 
 
-  # Postgres Database
-  db:
-    image: postgres:15-alpine
-    container_name: bd
+  # API Gateway
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: ./apps/api-gateway
+      dockerfile: Dockerfile
+      target: development
     ports:
-      - '5432:5432'
-    networks:
-      - challenge-network
-    restart: always
+      - '3001:3001'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./apps/api-gateway:/app
+      - /app/node_modules
     environment:
-      POSTGRES_PASSWORD: password
-      POSTGRES_USER: postgres
-      POSTGRES_DB: task_manager_bd
+      - NODE_ENV=development
+      - PORT=3001
+    depends_on:
+      - auth-service
+      - tasks-service
+      - notifications-service
+    networks:
+      - challenge-network
+
+
 
 volumes:
   postgres_data:
