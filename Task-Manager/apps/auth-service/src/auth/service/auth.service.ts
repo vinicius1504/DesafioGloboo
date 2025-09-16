@@ -14,6 +14,7 @@ import { LoginDto } from '../dto/login.dto';
 import { AuthResponseDto } from '../dto/auth-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { JwtPayload } from '../strategies/jwt.strategy';
+import { RabbitMQService, AuthEvent } from './rabbitmq.service';
 
 
 @Injectable()
@@ -22,12 +23,25 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly rabbitMQService: RabbitMQService,
   ) { }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
     try {
       const user = await this.usersService.create(registerDto);
       const userResponse = new UserResponseDto(user);
+
+      // Publish user registration event
+      const authEvent: AuthEvent = {
+        eventType: 'user.registered',
+        userId: user.id,
+        data: {
+          email: user.email,
+          username: user.username,
+        },
+        timestamp: new Date(),
+      };
+      await this.rabbitMQService.publishAuthEvent(authEvent);
 
       return this.generateTokens(userResponse);
     } catch (error) {
@@ -65,6 +79,20 @@ export class AuthService {
     }
 
     const userResponse = new UserResponseDto(user);
+
+    // Publish user login event
+    const authEvent: AuthEvent = {
+      eventType: 'user.logged_in',
+      userId: user.id,
+      data: {
+        email: user.email,
+        username: user.username,
+        loginTime: new Date().toISOString(),
+      },
+      timestamp: new Date(),
+    };
+    await this.rabbitMQService.publishAuthEvent(authEvent);
+
     return this.generateTokens(userResponse);
   }
 

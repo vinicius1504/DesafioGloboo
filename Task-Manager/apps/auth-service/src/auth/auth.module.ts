@@ -8,6 +8,7 @@ import { AuthService } from './service/auth.service';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { SharedModule } from '../shared/shared.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
       }),
     }),
     UsersModule,
+    SharedModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtRefreshStrategy],

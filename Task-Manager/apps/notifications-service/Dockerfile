@@ -6,17 +6,20 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files and packages for monorepo
+COPY package.json ./
+COPY apps/notifications-service/package*.json ./
+COPY packages/ ./packages/
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm i --legacy-peer-deps
 
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY apps/notifications-service/ ./
+COPY packages/ ./packages/
 
 # Build the application
 RUN npm run build
@@ -45,7 +48,8 @@ ENV PORT=3004
 FROM base AS development
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY apps/notifications-service/ ./
+COPY packages/ ./packages/
 
 EXPOSE 3004
 CMD ["npm", "run", "start:dev"]

@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { HealthModule } from './health/health.module';
+import { SharedModule } from './shared/shared.module';
 import { environmentConfig } from './config/environment';
 import { getDatabaseConfig } from './data/database.config';
 
@@ -24,6 +25,7 @@ import { getDatabaseConfig } from './data/database.config';
     AuthModule,
     UsersModule,
     HealthModule,
+    SharedModule,
   ],
   controllers: [AppController],
   providers: [AppService],
