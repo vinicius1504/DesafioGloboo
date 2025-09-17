@@ -8,7 +8,8 @@ WORKDIR /app
 RUN apk add --no-cache dumb-init
 
 # Copy package files first (for better caching)
-COPY package*.json ./
+COPY package.json package-lock.json 
+
 
 # Install dependencies (usar npm install ao invés de npm ci)
 RUN npm install
@@ -31,7 +32,7 @@ RUN apk add --no-cache dumb-init
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install 
 
 # Copy source and build
 COPY . .

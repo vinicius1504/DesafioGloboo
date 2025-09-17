@@ -12,7 +12,7 @@ COPY apps/notifications-service/package*.json ./
 COPY packages/ ./packages/
 
 # Install dependencies
-RUN npm i --legacy-peer-deps
+RUN npm install
 
 # Rebuild the source code only when needed
 FROM base AS builder
