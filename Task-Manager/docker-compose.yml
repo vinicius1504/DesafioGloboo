@@ -19,7 +19,7 @@ services:
   # Postgres Database
   db:
     image: postgres:15-alpine
-    container_name: bd
+    container_name: postgres
     ports:
       - '5432:5432'
     networks:
@@ -47,7 +47,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3002
-      - DATABASE_HOST=bd
+      - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
       - DATABASE_USERNAME=postgres
       - DATABASE_PASSWORD=password
@@ -79,7 +79,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3004
-      - DATABASE_HOST=bd
+      - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
       - DATABASE_USERNAME=postgres
       - DATABASE_PASSWORD=password
@@ -114,11 +114,11 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3003
-      - DB_HOST=bd
-      - DB_PORT=5432
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=password
-      - DB_DATABASE=task_manager_bd
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=password
+      - DATABASE_NAME=task_manager_bd
       - JWT_SECRET=96f35662f185ab2ac76b0d932516a5ba
       - JWT_EXPIRES_IN=15m
       - JWT_REFRESH_SECRET=df7bc93e81dc8a30e48bddd96b7e3bc2

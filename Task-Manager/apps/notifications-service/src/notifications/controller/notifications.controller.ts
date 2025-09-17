@@ -10,9 +10,9 @@
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
-import { NotificationsService } from './notifications.service';
-import { Notification } from './entities/notification.entity';
-import { CreateNotificationDto } from './dto/create-notification.dto';
+import { NotificationsService } from '../services/notifications.service';
+import { Notification } from '../entities/notification.entity';
+import { CreateNotificationDto } from '../dto/create-notification.dto';
 
 @ApiTags('notifications')
 @Controller('notifications')
