@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TasksModule } from './tasks/tasks.module';
@@ -33,6 +34,30 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
       }),
       inject: [ConfigService],
     }),
+    ClientsModule.register([
+      {
+        name: 'AUTH_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+          queue: 'auth_queue',
+          queueOptions: {
+            durable: false,
+          },
+        },
+      },
+      {
+        name: 'NOTIFICATIONS_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
+          queue: 'notifications_queue',
+          queueOptions: {
+            durable: false,
+          },
+        },
+      },
+    ]),
     TasksModule,
     CommentsModule,
     UsersModule,

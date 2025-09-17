@@ -4,6 +4,7 @@ import { TaskController } from './controllers/task.controller';
 import { TaskService } from './services/task.service';
 import { Task } from './entities/task.entity';
 import { User } from '../users/entities/user.entity';
+import { TasksMessageController } from './tasks-message.controller';
 import { SharedModule } from '../shared/shared.module';
 
 @Module({
@@ -11,7 +12,7 @@ import { SharedModule } from '../shared/shared.module';
     TypeOrmModule.forFeature([Task, User]),
     SharedModule,
   ],
-  controllers: [TaskController],
+  controllers: [TaskController, TasksMessageController],
   providers: [TaskService],
   exports: [TaskService],
 })

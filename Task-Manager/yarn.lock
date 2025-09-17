@@ -6911,15 +6911,6 @@ wcwidth@^1.0.1:
   dependencies:
     defaults "^1.0.3"
 
-"web@file:C:\\Users\\Globoo.io\\Documents\\projetos\\DesafioGloboo\\Task-Manager\\apps\\web":
-  version "0.1.0"
-  resolved "file:apps/web"
-  dependencies:
-    "@repo/ui" "*"
-    next "^15.5.0"
-    react "^19.1.0"
-    react-dom "^19.1.0"
-
 webpack-node-externals@3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/webpack-node-externals/-/webpack-node-externals-3.0.0.tgz"

@@ -14,7 +14,7 @@ import { LoginDto } from '../dto/login.dto';
 import { AuthResponseDto } from '../dto/auth-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { JwtPayload } from '../strategies/jwt.strategy';
-import { RabbitMQService, AuthEvent } from './rabbitmq.service';
+import { CommunicationService } from '../../shared/communication.service';
 
 
 @Injectable()
@@ -23,7 +23,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly rabbitMQService: RabbitMQService,
+    private readonly communicationService: CommunicationService,
   ) { }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
@@ -31,17 +31,12 @@ export class AuthService {
       const user = await this.usersService.create(registerDto);
       const userResponse = new UserResponseDto(user);
 
-      // Publish user registration event
-      const authEvent: AuthEvent = {
-        eventType: 'user.registered',
+      // Send user registration notification
+      await this.communicationService.sendUserRegistered({
         userId: user.id,
-        data: {
-          email: user.email,
-          username: user.username,
-        },
-        timestamp: new Date(),
-      };
-      await this.rabbitMQService.publishAuthEvent(authEvent);
+        email: user.email,
+        username: user.username,
+      });
 
       return this.generateTokens(userResponse);
     } catch (error) {
@@ -80,18 +75,13 @@ export class AuthService {
 
     const userResponse = new UserResponseDto(user);
 
-    // Publish user login event
-    const authEvent: AuthEvent = {
-      eventType: 'user.logged_in',
+    // Send user login notification
+    await this.communicationService.sendUserLogin({
       userId: user.id,
-      data: {
-        email: user.email,
-        username: user.username,
-        loginTime: new Date().toISOString(),
-      },
-      timestamp: new Date(),
-    };
-    await this.rabbitMQService.publishAuthEvent(authEvent);
+      email: user.email,
+      username: user.username,
+      loginTime: new Date().toISOString(),
+    });
 
     return this.generateTokens(userResponse);
   }
