@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -23,30 +22,6 @@ import { getDatabaseConfig } from './data/database.config';
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
     }),
-    ClientsModule.register([
-      {
-        name: 'TASKS_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
-          queue: 'tasks_queue',
-          queueOptions: {
-            durable: false,
-          },
-        },
-      },
-      {
-        name: 'NOTIFICATIONS_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: [process.env.RABBITMQ_URL || 'amqp://localhost:5672'],
-          queue: 'notifications_queue',
-          queueOptions: {
-            durable: false,
-          },
-        },
-      },
-    ]),
     AuthModule,
     UsersModule,
     HealthModule,

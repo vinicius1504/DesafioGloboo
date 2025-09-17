@@ -3,12 +3,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationsService } from './services/notifications.service';
 import { NotificationsController } from './controller/notifications.controller';
 import { NotificationsGateway } from './notifications.gateway';
-import { NotificationsMessageController } from './notifications-message.controller';
+import { Notification } from './entities/notification.entity';
+import { SharedModule } from '../shared/shared.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Notification])],
+  imports: [
+    TypeOrmModule.forFeature([Notification]),
+    SharedModule,  // ← Adicionado para fornecer RabbitMQService
+  ],
   providers: [NotificationsService, NotificationsGateway],
-  controllers: [NotificationsController, NotificationsMessageController],
+  controllers: [NotificationsController],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}

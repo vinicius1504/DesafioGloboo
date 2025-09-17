@@ -14,7 +14,7 @@ import { LoginDto } from '../dto/login.dto';
 import { AuthResponseDto } from '../dto/auth-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { JwtPayload } from '../strategies/jwt.strategy';
-import { CommunicationService } from '../../shared/communication.service';
+import { RabbitMQService } from './rabbitmq.service';
 
 
 @Injectable()
@@ -23,7 +23,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly communicationService: CommunicationService,
+    private readonly rabbitMQService: RabbitMQService,
   ) { }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
@@ -31,11 +31,15 @@ export class AuthService {
       const user = await this.usersService.create(registerDto);
       const userResponse = new UserResponseDto(user);
 
-      // Send user registration notification
-      await this.communicationService.sendUserRegistered({
+      // Publish user registered event
+      await this.rabbitMQService.publishAuthEvent({
+        eventType: 'user.registered',
         userId: user.id,
-        email: user.email,
-        username: user.username,
+        data: {
+          email: user.email,
+          username: user.username,
+        },
+        timestamp: new Date(),
       });
 
       return this.generateTokens(userResponse);
@@ -75,12 +79,16 @@ export class AuthService {
 
     const userResponse = new UserResponseDto(user);
 
-    // Send user login notification
-    await this.communicationService.sendUserLogin({
+    // Publish user login event
+    await this.rabbitMQService.publishAuthEvent({
+      eventType: 'user.logged_in',
       userId: user.id,
-      email: user.email,
-      username: user.username,
-      loginTime: new Date().toISOString(),
+      data: {
+        email: user.email,
+        username: user.username,
+        loginTime: new Date().toISOString(),
+      },
+      timestamp: new Date(),
     });
 
     return this.generateTokens(userResponse);

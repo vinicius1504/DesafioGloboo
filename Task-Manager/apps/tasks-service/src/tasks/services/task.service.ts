@@ -5,7 +5,7 @@ import { Task } from '../entities/task.entity';
 import { User } from '../../users/entities/user.entity';
 import { CreateTaskDto, UpdateTaskDto } from '../dto/task.dto';
 import { PaginationDto, PaginatedResponseDto } from '../../shared/dto/pagination.dto';
-import { CommunicationService } from '../../shared/services/communication.service';
+import { RabbitMQService } from '../../shared/services/rabbitmq.service';
 
 @Injectable()
 export class TaskService {
@@ -16,7 +16,7 @@ export class TaskService {
     private readonly taskRepository: Repository<Task>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly communicationService: CommunicationService,
+    private readonly rabbitMQService: RabbitMQService,
   ) {}
 
   async create(createTaskDto: CreateTaskDto, userId: string): Promise<Task> {
@@ -34,10 +34,15 @@ export class TaskService {
 
     const savedTask = await this.taskRepository.save(task);
 
-    // Publish event
-    await this.publishTaskEvent('task.created', savedTask.id, {
-      task: savedTask,
-      createdBy: userId,
+    // Publish task created event
+    await this.rabbitMQService.publishTaskEvent({
+      eventType: 'task.created',
+      taskId: savedTask.id,
+      data: {
+        task: savedTask,
+        createdBy: userId,
+      },
+      timestamp: new Date(),
     });
 
     this.logger.log(`Task created: ${savedTask.id} by user ${userId}`);
@@ -96,11 +101,16 @@ export class TaskService {
 
     const updatedTask = await this.taskRepository.save(task);
 
-    // Publish event
-    await this.publishTaskEvent('task.updated', id, {
-      task: updatedTask,
-      updatedBy: userId,
-      changes: updateTaskDto,
+    // Publish task updated event
+    await this.rabbitMQService.publishTaskEvent({
+      eventType: 'task.updated',
+      taskId: id,
+      data: {
+        task: updatedTask,
+        updatedBy: userId,
+        changes: updateTaskDto,
+      },
+      timestamp: new Date(),
     });
 
     this.logger.log(`Task updated: ${id} by user ${userId}`);
@@ -111,29 +121,16 @@ export class TaskService {
     const task = await this.findOne(id);
     await this.taskRepository.remove(task);
 
-    this.logger.log(`Task deleted: ${id} by user ${userId}`);
-  }
+    // Publish task deleted event
+    await this.rabbitMQService.publishTaskEvent({
+      eventType: 'task.deleted',
+      taskId: id,
+      data: {
+        deletedBy: userId,
+      },
+      timestamp: new Date(),
+    });
 
-  private async publishTaskEvent(eventType: string, taskId: string, data: any): Promise<void> {
-    try {
-      if (eventType === 'task.created') {
-        await this.communicationService.sendTaskCreated({
-          taskId,
-          title: data.task.title,
-          description: data.task.description,
-          status: data.task.status,
-          createdBy: data.createdBy,
-        });
-      } else if (eventType === 'task.updated') {
-        await this.communicationService.sendTaskUpdated({
-          taskId,
-          ...data,
-        });
-      } else if (eventType === 'task.deleted') {
-        await this.communicationService.sendTaskDeleted(taskId);
-      }
-    } catch (error) {
-      this.logger.error(`Failed to publish ${eventType} event for task ${taskId}:`, error);
-    }
+    this.logger.log(`Task deleted: ${id} by user ${userId}`);
   }
 }

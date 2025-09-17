@@ -8,7 +8,7 @@ WORKDIR /app
 RUN apk add --no-cache dumb-init
 
 # Copy package files first (for better caching)
-COPY package.json package-lock.json 
+COPY package*.json ./ 
 
 
 # Install dependencies (usar npm install ao invés de npm ci)

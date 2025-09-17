@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { connect, Connection, Channel } from 'amqplib';
 
@@ -10,7 +10,7 @@ export interface AuthEvent {
 }
 
 @Injectable()
-export class RabbitMQService {
+export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RabbitMQService.name);
   private connection: any = null;
   private channel: any = null;
@@ -26,30 +26,43 @@ export class RabbitMQService {
   }
 
   private async connect(): Promise<void> {
-    try {
-      const rabbitmqUrl = this.configService.get<string>('RABBITMQ_URL') || 'amqp://localhost:5672';
+    const maxRetries = 10;
+    const retryDelay = 5000; // 5 seconds
 
-      this.connection = await connect(rabbitmqUrl);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const rabbitmqUrl = this.configService.get<string>('RABBITMQ_URL') || 'amqp://localhost:5672';
 
-      if (!this.connection) {
-        throw new Error('Failed to establish RabbitMQ connection');
+        this.connection = await connect(rabbitmqUrl);
+
+        if (!this.connection) {
+          throw new Error('Failed to establish RabbitMQ connection');
+        }
+
+        this.channel = await this.connection.createChannel();
+
+        if (!this.channel) {
+          throw new Error('Failed to create RabbitMQ channel');
+        }
+
+        // Declare exchanges and queues for auth events
+        await this.channel.assertExchange('auth-events', 'topic', { durable: true });
+        await this.channel.assertQueue('auth-events-queue', { durable: true });
+        await this.channel.bindQueue('auth-events-queue', 'auth-events', 'user.#');
+
+        this.logger.log('Successfully connected to RabbitMQ');
+        return;
+      } catch (error) {
+        this.logger.warn(`Failed to connect to RabbitMQ (attempt ${attempt}/${maxRetries}):`, error.message);
+
+        if (attempt === maxRetries) {
+          this.logger.error('Max retries reached. Could not connect to RabbitMQ.');
+          throw error;
+        }
+
+        this.logger.log(`Retrying in ${retryDelay / 1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
-
-      this.channel = await this.connection.createChannel();
-
-      if (!this.channel) {
-        throw new Error('Failed to create RabbitMQ channel');
-      }
-
-      // Declare exchanges and queues for auth events
-      await this.channel.assertExchange('auth-events', 'topic', { durable: true });
-      await this.channel.assertQueue('auth-events-queue', { durable: true });
-      await this.channel.bindQueue('auth-events-queue', 'auth-events', 'user.#');
-
-      this.logger.log('Successfully connected to RabbitMQ');
-    } catch (error) {
-      this.logger.error('Failed to connect to RabbitMQ:', error);
-      throw error;
     }
   }
 

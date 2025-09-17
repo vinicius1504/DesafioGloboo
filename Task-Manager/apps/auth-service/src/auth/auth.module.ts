@@ -8,7 +8,6 @@ import { AuthService } from './service/auth.service';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { AuthMessageController } from './auth-message.controller';
 import { SharedModule } from '../shared/shared.module';
 
 @Module({
@@ -28,7 +27,7 @@ import { SharedModule } from '../shared/shared.module';
     UsersModule,
     SharedModule,
   ],
-  controllers: [AuthController, AuthMessageController],
+  controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtRefreshStrategy],
   exports: [AuthService, JwtStrategy, PassportModule],
 })
