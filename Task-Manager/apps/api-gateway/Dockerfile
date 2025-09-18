@@ -7,10 +7,10 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Copy package files
-COPY package*.json package-lock.json ./
+COPY package*.json ./
 
-# Install dependencies
-RUN npm install --omit=dev
+# Install ALL dependencies first (including dev dependencies for build)
+RUN npm install
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -46,9 +46,16 @@ CMD ["node", "dist/main"]
 # Development stage
 FROM base AS development
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
 RUN npm install
+
+# Copy source code
+COPY . .
+
 EXPOSE 3001
 CMD ["npm", "run", "start:dev"]
 
