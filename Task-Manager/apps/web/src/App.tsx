@@ -1,37 +1,76 @@
 import { Toaster } from 'react-hot-toast'
 import LoginPage from './pages/Login'
+import Dashboard from './pages/Dashboard'
 import { useAuthStore } from './stores/auth'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 function App() {
   const { isAuthenticated, user } = useAuthStore()
 
-  if (isAuthenticated && user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">
-            Bem-vindo, {user.name}!
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Você está logado como {user.email}
-          </p>
-          <button
-            onClick={() => useAuthStore.getState().logout()}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            Logout
-          </button>
-        </div>
-        <Toaster position="top-right" />
-      </div>
-    )
-  }
-
   return (
-    <>
-      <LoginPage />
-      <Toaster position="top-right" />
-    </>
+    <ThemeProvider>
+      {isAuthenticated && user ? (
+        <>
+          <Dashboard />
+          <Toaster
+            position="top-right"
+            containerStyle={{
+              top: 20,
+              right: 20,
+            }}
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '16px',
+                boxShadow: 'var(--shadow-lg)',
+                fontSize: '14px',
+                fontWeight: '500',
+              },
+              success: {
+                iconTheme: {
+                  primary: 'var(--priority-low)',
+                  secondary: 'white',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: 'var(--status-urgent)',
+                  secondary: 'white',
+                },
+              },
+            }}
+          />
+        </>
+      ) : (
+        <>
+          <LoginPage />
+          <Toaster
+            position="top-right"
+            containerStyle={{
+              top: 20,
+              right: 20,
+            }}
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '12px',
+                padding: '16px',
+                boxShadow: 'var(--shadow-lg)',
+                fontSize: '14px',
+                fontWeight: '500',
+              },
+            }}
+          />
+        </>
+      )}
+    </ThemeProvider>
   )
 }
 

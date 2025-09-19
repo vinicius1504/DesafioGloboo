@@ -4,7 +4,12 @@ import { AuthController } from './controller/auth.controller';
 import { AuthService } from './services/auth.service';
 
 @Module({
-  imports: [HttpModule],
+  imports: [
+    HttpModule.register({
+      timeout: 10000,
+      maxRedirects: 3,
+    }),
+  ],
   controllers: [AuthController],
   providers: [AuthService],
   exports: [AuthService],

@@ -7,7 +7,7 @@ async function bootstrap() {
 
   // Habilitar CORS
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:5173'],
+    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
     credentials: true,
   });
 
@@ -18,10 +18,13 @@ async function bootstrap() {
     forbidNonWhitelisted: true,
   }));
 
-  const port = process.env.PORT || 3003;
+  // TODO: Add Swagger configuration once @nestjs/swagger is properly installed
+
+  const port = process.env.PORT || 3001;
   await app.listen(port);
 
   console.log(`🚀 API Gateway running on port ${port}`);
+  console.log(`🔗 Endpoints disponíveis em: http://localhost:${port}/api`);
   console.log(`🛡️  Rate limiting ativo: 10 req/seg global`);
   console.log(`🛡️  Auth endpoints com rate limiting específico`);
 }

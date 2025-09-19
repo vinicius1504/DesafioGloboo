@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'react-hot-toast'
-import { CheckCircle, X, User, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { CheckCircle, User, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription,} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -47,22 +47,20 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login' }: AuthModalPr
   const onLoginSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password)
-      toast.success('Login realizado com sucesso!')
       onClose()
       loginForm.reset()
     } catch (error) {
-      toast.error('Erro ao fazer login. Verifique suas credenciais.')
+      // Error handling is done in the store
     }
   }
 
   const onRegisterSubmit = async (data: RegisterFormData) => {
     try {
       await register(data.name, data.email, data.password)
-      toast.success('Conta criada com sucesso!')
       onClose()
       registerForm.reset()
     } catch (error) {
-      toast.error('Erro ao criar conta. Tente novamente.')
+      // Error handling is done in the store
     }
   }
 

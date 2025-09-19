@@ -30,13 +30,13 @@ O **Task Manager** é uma aplicação robusta construída com arquitetura de mic
 ```mermaid
 graph TB
     subgraph "API Gateway"
-        GW[API Gateway<br/>Port: 3003<br/>Rate Limiting: 10 req/seg]
+        GW[API Gateway<br/>Port: 3001<br/>Rate Limiting: 10 req/seg]
     end
 
     subgraph "Microserviços"
-        AUTH[Auth Service<br/>Port: 3001<br/>PostgreSQL + JWT]
-        TASKS[Tasks Service<br/>Port: 3004<br/>PostgreSQL + WebSocket]
-        NOTIF[Notifications Service<br/>Port: 3005<br/>PostgreSQL + WebSocket]
+        AUTH[Auth Service<br/>Port: 3002<br/>PostgreSQL + JWT]
+        TASKS[Tasks Service<br/>Port: 3003<br/>PostgreSQL + WebSocket]
+        NOTIF[Notifications Service<br/>Port: 3004<br/>PostgreSQL + WebSocket]
     end
 
     subgraph "Infraestrutura"
@@ -118,11 +118,11 @@ cd DesafioGloboo/Task-Manager
 docker-compose up --build -d
 
 # 3. Acesse as aplicações
-echo "🌐 API Gateway: http://localhost:3003"
-echo "📚 Swagger Docs: http://localhost:3003/api"
-echo "🔐 Auth Service: http://localhost:3001"
-echo "📝 Tasks Service: http://localhost:3004"
-echo "🔔 Notifications: http://localhost:3005"
+echo "🌐 API Gateway: http://localhost:3001"
+echo "📚 Swagger Docs: http://localhost:3001/api"
+echo "🔐 Auth Service: http://localhost:3002"
+echo "📝 Tasks Service: http://localhost:3003"
+echo "🔔 Notifications: http://localhost:3004"
 ```
 
 ### 🛠️ Desenvolvimento Local
@@ -173,7 +173,7 @@ GET    /api/tasks/:id/comments?page=1&size=10  # Listar comentários (paginaçã
 
 #### 1. Registrar Usuário
 ```bash
-curl -X POST http://localhost:3003/api/auth/register \
+curl -X POST http://localhost:3001/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -184,7 +184,7 @@ curl -X POST http://localhost:3003/api/auth/register \
 
 #### 2. Login
 ```bash
-curl -X POST http://localhost:3003/api/auth/login \
+curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "login": "user@example.com",
@@ -194,7 +194,7 @@ curl -X POST http://localhost:3003/api/auth/login \
 
 #### 3. Criar Tarefa (com JWT)
 ```bash
-curl -X POST http://localhost:3003/api/tasks \
+curl -X POST http://localhost:3001/api/tasks \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -207,7 +207,7 @@ curl -X POST http://localhost:3003/api/tasks \
 
 #### 4. Listar Tarefas
 ```bash
-curl -X GET "http://localhost:3003/api/tasks?page=1&size=10" \
+curl -X GET "http://localhost:3001/api/tasks?page=1&size=10" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -270,10 +270,10 @@ Task-Manager/
 
 | Serviço | Tecnologias | Porta | Banco |
 |---------|-------------|-------|-------|
-| **API Gateway** | NestJS, Swagger, Rate Limiting | 3003 | - |
-| **Auth Service** | NestJS, JWT, Passport, bcrypt | 3001 | PostgreSQL |
-| **Tasks Service** | NestJS, WebSocket, TypeORM | 3004 | PostgreSQL |
-| **Notifications** | NestJS, WebSocket, TypeORM | 3005 | PostgreSQL |
+| **API Gateway** | NestJS, Swagger, Rate Limiting | 3001 | - |
+| **Auth Service** | NestJS, JWT, Passport, bcrypt | 3002 | PostgreSQL |
+| **Tasks Service** | NestJS, WebSocket, TypeORM | 3003 | PostgreSQL |
+| **Notifications** | NestJS, WebSocket, TypeORM | 3004 | PostgreSQL |
 
 ### 📊 Comunicação Entre Serviços
 
@@ -334,9 +334,9 @@ services:
 ### Health Checks
 ```bash
 # Verificar saúde dos serviços
-curl http://localhost:3001/health  # Auth Service
-curl http://localhost:3004/health  # Tasks Service
-curl http://localhost:3005/health  # Notifications Service
+curl http://localhost:3002/health  # Auth Service
+curl http://localhost:3003/health  # Tasks Service
+curl http://localhost:3004/health  # Notifications Service
 ```
 
 ### Logs em Tempo Real
@@ -454,7 +454,7 @@ Este projeto está sob a **licença MIT**. Veja o arquivo [LICENSE](LICENSE) par
 Para dúvidas ou sugestões:
 - 📧 **Email**: seu-email@example.com
 - 💬 **Issues**: [GitHub Issues](https://github.com/vinicius1504/DesafioGloboo/issues)
-- 📖 **Documentação**: http://localhost:3003/api
+- 📖 **Documentação**: http://localhost:3001/api
 
 ---
 
