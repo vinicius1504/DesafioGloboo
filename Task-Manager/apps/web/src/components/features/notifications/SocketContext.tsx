@@ -1,13 +1,6 @@
 import React, { createContext, useContext, type ReactNode } from 'react';
-import { useSocket } from '../hooks/useSocket';
-
-interface SocketContextType {
-  socket: any;
-  isConnected: boolean;
-  onlineUsers: any[];
-  searchUsers: (query: string) => Promise<any[]>;
-  sendNotification: (userId: string, message: string, taskId?: string) => void;
-}
+import { useSocket } from '@/hooks/useSocket';
+import { SocketContextType } from '@/types';
 
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
 

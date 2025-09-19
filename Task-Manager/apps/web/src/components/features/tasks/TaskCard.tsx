@@ -1,24 +1,6 @@
 import React from 'react';
 import { Calendar, Edit, Trash2, User, Eye } from 'lucide-react';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  dueDate: string;
-  assignedUsers?: Array<{ id: string; username: string; email: string; isActive: boolean; createdAt: string; updatedAt: string }>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface TaskCardProps {
-  task: Task;
-  onEdit: () => void;
-  onDelete: () => void;
-  onView: () => void;
-}
+import { Task, TaskCardProps } from '@/types';
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onView }) => {
   const getStatusBadge = (status: string) => {

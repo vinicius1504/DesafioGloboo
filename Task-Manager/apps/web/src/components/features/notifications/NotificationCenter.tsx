@@ -1,24 +1,6 @@
 import React from 'react';
 import { X, Bell, User, CheckCircle, AlertCircle, Info } from 'lucide-react';
-
-interface Notification {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'info' | 'task_assignment';
-  timestamp: string;
-  from?: string;
-  taskId?: string;
-  isRead: boolean;
-}
-
-interface NotificationCenterProps {
-  notifications: Notification[];
-  onMarkAsRead: (id: string) => void;
-  onDismiss: (id: string) => void;
-  onClearAll: () => void;
-  isVisible?: boolean;
-  onToggleVisibility?: () => void;
-}
+import { Notification, NotificationCenterProps } from '@/types';
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({
   notifications,

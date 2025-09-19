@@ -1,22 +1,7 @@
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/stores/auth';
-
-interface OnlineUser {
-  id: string;
-  username: string;
-  email: string;
-  status: 'online' | 'offline';
-  lastSeen?: string;
-}
-
-interface UseSocketReturn {
-  socket: Socket | null;
-  isConnected: boolean;
-  onlineUsers: OnlineUser[];
-  searchUsers: (query: string) => Promise<OnlineUser[]>;
-  sendNotification: (userId: string, message: string, taskId?: string) => void;
-}
+import { OnlineUser, UseSocketReturn } from '@/types';
 
 export const useSocket = (): UseSocketReturn => {
   const [socket, setSocket] = useState<Socket | null>(null);

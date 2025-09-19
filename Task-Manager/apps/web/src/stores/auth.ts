@@ -2,26 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi, ApiError } from '@/lib/api'
 import { toast } from 'react-hot-toast'
-
-interface User {
-  id: string
-  name: string
-  email: string
-  username: string
-}
-
-interface AuthState {
-  user: User | null
-  accessToken: string | null
-  refreshToken: string | null
-  isAuthenticated: boolean
-  isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (name: string, email: string, password: string) => Promise<void>
-  logout: (showToast?: boolean) => void
-  setLoading: (loading: boolean) => void
-  debugAuth: () => void
-}
+import { AuthUser, AuthState } from '@/types'
 
 export const useAuthStore = create<AuthState>()(
   persist(

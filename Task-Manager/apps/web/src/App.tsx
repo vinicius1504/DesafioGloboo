@@ -1,8 +1,8 @@
 import { Toaster } from 'react-hot-toast'
 import LoginPage from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import { useAuthStore } from './stores/auth'
-import { ThemeProvider } from './contexts/ThemeContext'
+import { useAuthStore } from '@/stores/auth'
+import { ThemeProvider } from '@/theme'
 
 function App() {
   const { isAuthenticated, user } = useAuthStore()

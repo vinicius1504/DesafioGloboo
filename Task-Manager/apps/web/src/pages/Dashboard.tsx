@@ -1,27 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useTheme } from '../contexts/ThemeContext';
-import { useAuthStore } from '../stores/auth';
+import { useTheme } from '@/theme';
+import { useAuthStore } from '@/stores/auth';
 import { Sun, Moon, Search, Plus, BarChart3, Bell } from 'lucide-react';
-import TaskCard from '../components/TaskCard';
-import TaskModal from '../components/TaskModal';
-import TaskViewModal from '../components/TaskViewModal';
-import NotificationCenter from '../components/NotificationCenter';
-import { api } from '../lib/api';
-import { useNotifications } from '../hooks/useNotifications';
-import { useNotificationCenter } from '../hooks/useNotificationCenter';
-import { SocketProvider } from '../contexts/SocketContext';
+import { TaskCard, TaskModal, TaskViewModal, NotificationCenter, SocketProvider } from '@/components';
+import { api } from '@/lib/api';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useNotificationCenter } from '@/hooks/useNotificationCenter';
+import { Task } from '@/types';
 
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  dueDate: string;
-  assignedUsers?: Array<{ id: string; username: string; email: string; isActive: boolean; createdAt: string; updatedAt: string }>;
-  createdAt: string;
-  updatedAt: string;
-}
 
 const DashboardContent: React.FC = () => {
   const { theme, toggleTheme } = useTheme();

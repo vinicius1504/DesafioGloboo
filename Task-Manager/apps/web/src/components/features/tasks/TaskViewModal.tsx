@@ -1,23 +1,6 @@
 import React from 'react';
 import { X, Calendar, User, Clock, Tag, Users } from 'lucide-react';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  dueDate: string;
-  assignedUsers?: Array<{ id: string; username: string; email: string; isActive: boolean; createdAt: string; updatedAt: string }>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface TaskViewModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  task: Task | null;
-}
+import { Task, TaskViewModalProps } from '@/types';
 
 const TaskViewModal: React.FC<TaskViewModalProps> = ({ isOpen, onClose, task }) => {
   if (!isOpen || !task) return null;
