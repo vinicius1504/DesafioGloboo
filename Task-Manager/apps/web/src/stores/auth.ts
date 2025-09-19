@@ -18,7 +18,7 @@ interface AuthState {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
-  logout: () => void
+  logout: (showToast?: boolean) => void
   setLoading: (loading: boolean) => void
   debugAuth: () => void
 }
@@ -35,10 +35,32 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true })
         try {
+          console.log('🚀 Iniciando login com:', { email, password: '***' });
           const response = await authApi.login(email, password)
 
-          console.log('🔑 Login response:', response);
-          console.log('💾 Token recebido:', response.access_token);
+          console.log('🔑 Login response completo:', response);
+          console.log('🔍 Response keys:', Object.keys(response));
+          console.log('💾 access_token:', response.access_token);
+          console.log('💾 accessToken:', response.access_token);
+          console.log('💾 token:', response.token);
+          console.log('💾 response.user:', response.user);
+
+          // Detectar qual campo contém o token
+          const rawAccessToken = response.access_token || response.token;
+          const accessToken = typeof rawAccessToken === 'string' ? rawAccessToken : null;
+          const rawRefreshToken = response.refresh_token;
+          const refreshToken = typeof rawRefreshToken === 'string' ? rawRefreshToken : null;
+
+          console.log('🎯 Token detectado:', accessToken);
+          console.log('🎯 Refresh token detectado:', refreshToken);
+          console.log('🎯 Token type:', typeof accessToken);
+          console.log('🎯 Token length:', accessToken?.length);
+
+          if (!accessToken) {
+            console.error('❌ NENHUM TOKEN ENCONTRADO NA RESPOSTA!');
+            console.error('❌ Response completo para debug:', JSON.stringify(response, null, 2));
+            throw new Error('Token não encontrado na resposta do login');
+          }
 
           const user = {
             id: response.user.id,
@@ -48,13 +70,17 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // Salvar também diretamente no localStorage para garantir
-          localStorage.setItem('access_token', response.access_token);
-          localStorage.setItem('refresh_token', response.refresh_token);
+          if (typeof accessToken === 'string') {
+            localStorage.setItem('access_token', accessToken);
+          }
+          if (typeof refreshToken === 'string') {
+            localStorage.setItem('refresh_token', refreshToken);
+          }
 
           set({
             user,
-            accessToken: response.access_token,
-            refreshToken: response.refresh_token,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
             isAuthenticated: true,
             isLoading: false
           })
@@ -171,17 +197,19 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
-        toast.success(' Logout realizado com sucesso!', {
-          duration: 2000,
-          style: {
-            background: '#6B7280',
-            color: '#ffffff',
-            fontWeight: '500',
-            padding: '12px 20px',
-            borderRadius: '10px',
-          }
-        })
+      logout: (showToast = true) => {
+        if (showToast) {
+          toast.success(' Logout realizado com sucesso!', {
+            duration: 2000,
+            style: {
+              background: '#6B7280',
+              color: '#ffffff',
+              fontWeight: '500',
+              padding: '12px 20px',
+              borderRadius: '10px',
+            }
+          })
+        }
 
         // Limpar também do localStorage
         localStorage.removeItem('access_token');

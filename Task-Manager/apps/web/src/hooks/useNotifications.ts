@@ -90,10 +90,10 @@ export const useNotifications = () => {
 
   const showTaskStatusChanged = (taskTitle: string, newStatus: string) => {
     const statusLabels = {
-      'EM_PROGRESSO': 'Em Progresso',
-      'EM_REVISAO': 'Em Revisão',
-      'A_FAZER': 'A Fazer',
-      'URGENTE': 'Urgente'
+      'TODO': 'A Fazer',
+      'IN_PROGRESS': 'Em Progresso',
+      'REVIEW': 'Em Revisão',
+      'DONE': 'Concluído'
     };
 
     const label = statusLabels[newStatus as keyof typeof statusLabels] || newStatus;

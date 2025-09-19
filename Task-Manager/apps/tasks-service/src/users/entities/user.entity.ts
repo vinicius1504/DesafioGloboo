@@ -11,12 +11,6 @@ export class User {
   @Column({ unique: true, length: 100 })
   email: string;
 
-  @Column({ length: 100 })
-  firstName: string;
-
-  @Column({ length: 100 })
-  lastName: string;
-
   @Column({ default: true })
   isActive: boolean;
 

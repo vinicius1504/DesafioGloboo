@@ -31,6 +31,8 @@ export class AuthResponseDto {
     expiresIn: number,
   ) {
     this.user = user;
+    this.access_token = accessToken;
+    this.refresh_token = refreshToken;
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
     this.expiresIn = expiresIn;

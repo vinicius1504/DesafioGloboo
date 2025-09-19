@@ -119,14 +119,14 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login' }: AuthModalPr
             <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-gray-700">
-                  Email
+                  Email ou Username
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="email"
-                    type="email"
-                    placeholder="seu@email.com"
+                    type="text"
+                    placeholder="seu@email.com ou username"
                     className="pl-10"
                     {...loginForm.register('email')}
                   />
@@ -198,14 +198,14 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login' }: AuthModalPr
             <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-gray-700">
-                  Nome completo
+                  Username
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="name"
                     type="text"
-                    placeholder="Seu nome completo"
+                    placeholder="Seu username"
                     className="pl-10"
                     {...registerForm.register('name')}
                   />

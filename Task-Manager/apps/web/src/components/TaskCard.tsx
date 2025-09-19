@@ -1,14 +1,14 @@
 import React from 'react';
-import { Calendar, Edit, Trash2, User } from 'lucide-react';
+import { Calendar, Edit, Trash2, User, Eye } from 'lucide-react';
 
 interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'EM_PROGRESSO' | 'EM_REVISAO' | 'A_FAZER' | 'URGENTE';
-  priority: 'ALTA' | 'MEDIA' | 'BAIXA';
+  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   dueDate: string;
-  assignees: Array<{ id: string; name: string; avatar: string }>;
+  assignedUsers?: Array<{ id: string; username: string; email: string; isActive: boolean; createdAt: string; updatedAt: string }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -17,15 +17,16 @@ interface TaskCardProps {
   task: Task;
   onEdit: () => void;
   onDelete: () => void;
+  onView: () => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onView }) => {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      'EM_PROGRESSO': { label: 'EM PROGRESSO', color: 'var(--status-progress)' },
-      'EM_REVISAO': { label: 'EM REVISÃO', color: 'var(--status-review)' },
-      'A_FAZER': { label: 'A FAZER', color: 'var(--status-todo)' },
-      'URGENTE': { label: 'URGENTE', color: 'var(--status-urgent)' }
+      'TODO': { label: 'A FAZER', color: 'var(--status-todo)' },
+      'IN_PROGRESS': { label: 'EM PROGRESSO', color: 'var(--status-progress)' },
+      'REVIEW': { label: 'EM REVISÃO', color: 'var(--status-review)' },
+      'DONE': { label: 'CONCLUÍDO', color: 'var(--status-done)' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig];
@@ -42,9 +43,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
 
   const getPriorityBadge = (priority: string) => {
     const priorityConfig = {
-      'ALTA': { label: 'ALTA', color: 'var(--priority-high)' },
-      'MEDIA': { label: 'MÉDIA', color: 'var(--priority-medium)' },
-      'BAIXA': { label: 'BAIXA', color: 'var(--priority-low)' }
+      'LOW': { label: 'BAIXA', color: 'var(--priority-low)' },
+      'MEDIUM': { label: 'MÉDIA', color: 'var(--priority-medium)' },
+      'HIGH': { label: 'ALTA', color: 'var(--priority-high)' },
+      'URGENT': { label: 'URGENTE', color: 'var(--status-urgent)' }
     };
 
     const config = priorityConfig[priority as keyof typeof priorityConfig];
@@ -91,6 +93,16 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
+              onView();
+            }}
+            className="p-1.5 rounded-lg transition-colors hover:bg-green-50 focus-ring"
+            title="Visualizar tarefa"
+          >
+            <Eye className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
               onEdit();
             }}
             className="p-1.5 rounded-lg transition-colors hover:bg-blue-50 focus-ring"
@@ -128,18 +140,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
       {/* Assignees */}
       <div className="flex items-center gap-2 mb-4">
         <div className="flex -space-x-2">
-          {task.assignees && task.assignees.length > 0 ? (
-            task.assignees.slice(0, 3).map((assignee) => (
+          {task.assignedUsers && task.assignedUsers.length > 0 ? (
+            task.assignedUsers.slice(0, 3).map((assignee) => (
               <div
                 key={assignee.id}
                 className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs font-semibold text-white"
                 style={{
-                  backgroundColor: generateAvatar(assignee.name),
+                  backgroundColor: generateAvatar(assignee.username),
                   borderColor: 'var(--bg-card)'
                 }}
-                title={assignee.name}
+                title={assignee.username}
               >
-                {assignee.name.charAt(0).toUpperCase()}
+                {assignee.username.charAt(0).toUpperCase()}
               </div>
             ))
           ) : (
@@ -153,7 +165,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
               <User className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
             </div>
           )}
-          {task.assignees && task.assignees.length > 3 && (
+          {task.assignedUsers && task.assignedUsers.length > 3 && (
             <div
               className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-xs font-semibold"
               style={{
@@ -162,7 +174,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
                 color: 'white'
               }}
             >
-              +{task.assignees.length - 3}
+              +{task.assignedUsers.length - 3}
             </div>
           )}
         </div>

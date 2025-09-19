@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuthStore } from '../stores/auth';
-import { Sun, Moon, Search, Plus, BarChart3 } from 'lucide-react';
+import { Sun, Moon, Search, Plus, BarChart3, Bell } from 'lucide-react';
 import TaskCard from '../components/TaskCard';
 import TaskModal from '../components/TaskModal';
+import TaskViewModal from '../components/TaskViewModal';
+import NotificationCenter from '../components/NotificationCenter';
 import { api } from '../lib/api';
 import { useNotifications } from '../hooks/useNotifications';
+import { useNotificationCenter } from '../hooks/useNotificationCenter';
+import { SocketProvider } from '../contexts/SocketContext';
 
 interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'EM_PROGRESSO' | 'EM_REVISAO' | 'A_FAZER' | 'URGENTE';
-  priority: 'ALTA' | 'MEDIA' | 'BAIXA';
+  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   dueDate: string;
-  assignees: Array<{ id: string; name: string; avatar: string }>;
+  assignedUsers?: Array<{ id: string; username: string; email: string; isActive: boolean; createdAt: string; updatedAt: string }>;
   createdAt: string;
   updatedAt: string;
 }
 
-const Dashboard: React.FC = () => {
+const DashboardContent: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const { user, logout, debugAuth } = useAuthStore();
   const { showTaskCreated, showTaskUpdated, showTaskDeleted, showError, showConnectionError } = useNotifications();
@@ -29,8 +33,21 @@ const Dashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('Todos os Status');
   const [priorityFilter, setPriorityFilter] = useState('Todas as Prioridades');
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isTaskViewModalOpen, setIsTaskViewModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(true);
+
+  // Notification Center
+  const {
+    notifications,
+    addNotification,
+    markAsRead,
+    dismissNotification,
+    clearAllNotifications,
+    unreadCount
+  } = useNotificationCenter();
 
   useEffect(() => {
     fetchTasks();
@@ -39,10 +56,18 @@ const Dashboard: React.FC = () => {
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const response = await api.get<Task[]>('/api/tasks');
-      setTasks(response);
+      console.log('🔄 Iniciando fetchTasks...');
+      const response = await api.get<{data: Task[], total: number, page: number, size: number, totalPages: number}>('/api/tasks');
+      console.log('📋 Resposta completa do backend:', response);
+
+      // Extrair o array de tarefas do objeto de paginação
+      const tasksArray = response.data || [];
+      console.log('📊 Tarefas extraídas:', tasksArray);
+      console.log('📊 Quantidade de tarefas:', tasksArray.length);
+
+      setTasks(tasksArray);
     } catch (error) {
-      console.error('Erro ao buscar tarefas:', error);
+      console.error('❌ Erro ao buscar tarefas:', error);
       showConnectionError();
     } finally {
       setLoading(false);
@@ -51,13 +76,42 @@ const Dashboard: React.FC = () => {
 
   const handleCreateTask = async (taskData: Partial<Task>) => {
     try {
-      const response = await api.post<Task>('/api/tasks', taskData);
+      // Clean data and convert frontend format to backend format
+      const backendData: any = {
+        title: taskData.title,
+        description: taskData.description,
+        status: taskData.status,
+        priority: taskData.priority,
+        dueDate: taskData.dueDate
+      };
+
+      // Only add assignedUserIds if we have assigned users
+      if (taskData.assignedUsers && taskData.assignedUsers.length > 0) {
+        backendData.assignedUserIds = taskData.assignedUsers.map(user => user.id);
+      }
+
+      console.log('🚀 Sending clean backend data:', backendData);
+
+      const response = await api.post<Task>('/api/tasks', backendData);
       setTasks(prev => [...prev, response]);
       showTaskCreated(taskData.title || 'Nova tarefa');
+
+      // Adicionar notificação ao centro de notificações
+      addNotification({
+        message: `Tarefa "${taskData.title || 'Nova tarefa'}" foi criada com sucesso!`,
+        type: 'success'
+      });
+
       setIsTaskModalOpen(false);
     } catch (error) {
       console.error('Erro ao criar tarefa:', error);
       showError('Erro ao criar tarefa');
+
+      // Adicionar notificação de erro ao centro de notificações
+      addNotification({
+        message: 'Erro ao criar tarefa. Tente novamente.',
+        type: 'error'
+      });
     }
   };
 
@@ -65,29 +119,79 @@ const Dashboard: React.FC = () => {
     if (!editingTask) return;
 
     try {
-      const response = await api.put<Task>(`/api/tasks/${editingTask.id}`, taskData);
+      // Clean data and convert frontend format to backend format
+      const backendData: any = {
+        title: taskData.title,
+        description: taskData.description,
+        status: taskData.status,
+        priority: taskData.priority,
+        dueDate: taskData.dueDate
+      };
+
+      // Only add assignedUserIds if we have assigned users
+      if (taskData.assignedUsers && taskData.assignedUsers.length > 0) {
+        backendData.assignedUserIds = taskData.assignedUsers.map(user => user.id);
+      }
+
+      console.log('✏️ Sending clean edit data:', backendData);
+
+      const response = await api.put<Task>(`/api/tasks/${editingTask.id}`, backendData);
       setTasks(prev => prev.map(task =>
         task.id === editingTask.id ? response : task
       ));
       showTaskUpdated(editingTask.title);
+
+      // Adicionar notificação ao centro de notificações
+      addNotification({
+        message: `Tarefa "${editingTask.title}" foi atualizada com sucesso!`,
+        type: 'success'
+      });
+
       setEditingTask(null);
       setIsTaskModalOpen(false);
     } catch (error) {
       console.error('Erro ao editar tarefa:', error);
       showError('Erro ao editar tarefa');
+
+      // Adicionar notificação de erro ao centro de notificações
+      addNotification({
+        message: 'Erro ao editar tarefa. Tente novamente.',
+        type: 'error'
+      });
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     const taskToDelete = tasks.find(task => task.id === taskId);
 
+    // Confirmação antes de excluir
+    const confirmDelete = window.confirm(
+      `Tem certeza que deseja excluir a tarefa "${taskToDelete?.title}"?\n\nEsta ação não pode ser desfeita.`
+    );
+
+    if (!confirmDelete) {
+      return; // Usuário cancelou
+    }
+
     try {
       await api.delete(`/api/tasks/${taskId}`);
       setTasks(prev => prev.filter(task => task.id !== taskId));
       showTaskDeleted(taskToDelete?.title || 'Tarefa');
+
+      // Adicionar notificação ao centro de notificações
+      addNotification({
+        message: `Tarefa "${taskToDelete?.title || 'Tarefa'}" foi excluída com sucesso!`,
+        type: 'success'
+      });
     } catch (error) {
       console.error('Erro ao excluir tarefa:', error);
       showError('Erro ao excluir tarefa');
+
+      // Adicionar notificação de erro ao centro de notificações
+      addNotification({
+        message: 'Erro ao excluir tarefa. Tente novamente.',
+        type: 'error'
+      });
     }
   };
 
@@ -101,11 +205,36 @@ const Dashboard: React.FC = () => {
     setIsTaskModalOpen(true);
   };
 
+  const openViewModal = (task: Task) => {
+    setViewingTask(task);
+    setIsTaskViewModalOpen(true);
+  };
+
+  const closeViewModal = () => {
+    setViewingTask(null);
+    setIsTaskViewModalOpen(false);
+  };
+
+  // Status and priority mappings for display
+  const statusDisplayMap = {
+    'TODO': 'A Fazer',
+    'IN_PROGRESS': 'Em Progresso',
+    'REVIEW': 'Em Revisão',
+    'DONE': 'Concluído'
+  };
+
+  const priorityDisplayMap = {
+    'LOW': 'Baixa',
+    'MEDIUM': 'Média',
+    'HIGH': 'Alta',
+    'URGENT': 'Urgente'
+  };
+
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          task.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'Todos os Status' || task.status === statusFilter;
-    const matchesPriority = priorityFilter === 'Todas as Prioridades' || task.priority === priorityFilter;
+    const matchesStatus = statusFilter === 'Todos os Status' || statusDisplayMap[task.status] === statusFilter;
+    const matchesPriority = priorityFilter === 'Todas as Prioridades' || priorityDisplayMap[task.priority] === priorityFilter;
 
     return matchesSearch && matchesStatus && matchesPriority;
   });
@@ -138,6 +267,22 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Notification Bell */}
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              <Bell className="w-5 h-5 text-white" />
+              {unreadCount > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
+                  style={{ fontSize: '10px' }}
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
@@ -158,7 +303,7 @@ const Dashboard: React.FC = () => {
                 </span>
               </div>
               <button
-                onClick={logout}
+                onClick={() => logout()}
                 className="text-white/80 hover:text-white text-sm transition-colors"
               >
                 Sair
@@ -203,10 +348,10 @@ const Dashboard: React.FC = () => {
                 }}
               >
                 <option>Todos os Status</option>
-                <option value="EM_PROGRESSO">Em Progresso</option>
-                <option value="EM_REVISAO">Em Revisão</option>
-                <option value="A_FAZER">A Fazer</option>
-                <option value="URGENTE">Urgente</option>
+                <option value="A Fazer">A Fazer</option>
+                <option value="Em Progresso">Em Progresso</option>
+                <option value="Em Revisão">Em Revisão</option>
+                <option value="Concluído">Concluído</option>
               </select>
 
               <select
@@ -220,9 +365,10 @@ const Dashboard: React.FC = () => {
                 }}
               >
                 <option>Todas as Prioridades</option>
-                <option value="ALTA">Alta</option>
-                <option value="MEDIA">Média</option>
-                <option value="BAIXA">Baixa</option>
+                <option value="Baixa">Baixa</option>
+                <option value="Média">Média</option>
+                <option value="Alta">Alta</option>
+                <option value="Urgente">Urgente</option>
               </select>
 
               <button
@@ -269,19 +415,19 @@ const Dashboard: React.FC = () => {
             <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}>
               <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Em Progresso</h3>
               <p className="text-3xl font-bold" style={{ color: 'var(--status-progress)' }}>
-                {tasks.filter(t => t.status === 'EM_PROGRESSO').length}
+                {tasks.filter(t => t.status === 'IN_PROGRESS').length}
               </p>
             </div>
             <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}>
               <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Pendentes</h3>
               <p className="text-3xl font-bold" style={{ color: 'var(--status-todo)' }}>
-                {tasks.filter(t => t.status === 'A_FAZER').length}
+                {tasks.filter(t => t.status === 'TODO').length}
               </p>
             </div>
             <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}>
               <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Urgentes</h3>
               <p className="text-3xl font-bold" style={{ color: 'var(--status-urgent)' }}>
-                {tasks.filter(t => t.status === 'URGENTE').length}
+                {tasks.filter(t => t.status === 'DONE').length}
               </p>
             </div>
           </div>
@@ -294,6 +440,7 @@ const Dashboard: React.FC = () => {
               <TaskCard
                 key={task.id}
                 task={task}
+                onView={() => openViewModal(task)}
                 onEdit={() => openEditModal(task)}
                 onDelete={() => handleDeleteTask(task.id)}
               />
@@ -326,7 +473,36 @@ const Dashboard: React.FC = () => {
           task={editingTask}
         />
       )}
+
+      {/* Task View Modal */}
+      {isTaskViewModalOpen && (
+        <TaskViewModal
+          isOpen={isTaskViewModalOpen}
+          onClose={closeViewModal}
+          task={viewingTask}
+        />
+      )}
+
+      {/* Notification Center */}
+      {showNotifications && (
+        <NotificationCenter
+          notifications={notifications}
+          onMarkAsRead={markAsRead}
+          onDismiss={dismissNotification}
+          onClearAll={clearAllNotifications}
+          isVisible={showNotifications}
+          onToggleVisibility={() => setShowNotifications(false)}
+        />
+      )}
     </div>
+  );
+};
+
+const Dashboard: React.FC = () => {
+  return (
+    <SocketProvider>
+      <DashboardContent />
+    </SocketProvider>
   );
 };
 

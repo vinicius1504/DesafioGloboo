@@ -3,8 +3,8 @@ import { z } from "zod"
 export const loginSchema = z.object({
   email: z
     .string()
-    .min(1, "Email é obrigatório")
-    .email("Email inválido"),
+    .min(1, "Email ou username é obrigatório")
+    .min(3, "Deve ter pelo menos 3 caracteres"),
   password: z
     .string()
     .min(1, "Senha é obrigatória")
@@ -14,8 +14,8 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   name: z
     .string()
-    .min(1, "Nome é obrigatório")
-    .min(2, "Nome deve ter pelo menos 2 caracteres"),
+    .min(1, "Username é obrigatório")
+    .min(3, "Username deve ter pelo menos 3 caracteres"),
   email: z
     .string()
     .min(1, "Email é obrigatório")

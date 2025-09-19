@@ -1,6 +1,7 @@
 const API_BASE_URL = (import.meta.env?.VITE_API_URL as string) || 'http://localhost:3001';
 
 interface AuthResponse {
+  token(arg0: string, token: any): unknown;
   access_token: string;
   refresh_token: string;
   user: {
@@ -34,6 +35,15 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
     throw new ApiError(response.status, errorData.message || 'Erro na requisição');
+  }
+
+  // Check if response has content before trying to parse JSON
+  const contentType = response.headers.get('content-type');
+  const contentLength = response.headers.get('content-length');
+
+  if (contentLength === '0' || !contentType?.includes('application/json')) {
+    // Return empty object for DELETE operations or non-JSON responses
+    return {} as T;
   }
 
   return response.json();
@@ -70,35 +80,83 @@ export const authApi = {
 
 // Authenticated API instance
 class AuthenticatedApi {
+  // private isTokenExpired(token: string): boolean {
+  //   try {
+  //     const payload = JSON.parse(atob(token.split('.')[1]));
+  //     const now = Math.floor(Date.now() / 1000);
+  //     const expired = payload.exp < now;
+
+  //     console.log('🕐 Token expiration check:', {
+  //       exp: payload.exp,
+  //       now: now,
+  //       expired: expired,
+  //       timeUntilExp: payload.exp - now,
+  //       expDate: new Date(payload.exp * 1000).toLocaleString()
+  //     });
+
+  //     return expired;
+  //   } catch (error) {
+  //     console.warn('❌ Erro ao verificar token:', error);
+  //     return true;
+  //   }
+  // }
+
+  // private clearTokens() {
+  //   localStorage.removeItem('access_token');
+  //   localStorage.removeItem('refresh_token');
+  //   localStorage.removeItem('auth-storage');
+  //   console.log('🧹 Tokens expirados removidos');
+
+  //   // Forçar logout no store sem redirecionamento automático
+  //   try {
+  //     import('../stores/auth').then(({ useAuthStore }) => {
+  //       useAuthStore.getState().logout(false);
+  //     });
+  //   } catch (error) {
+  //     console.warn('Erro ao fazer logout:', error);
+  //   }
+  // }
+
   private getAuthHeaders(): Record<string, string> {
     console.log('🔍 Buscando token de autenticação...');
 
-    // Primeiro tenta pegar do Zustand persist storage
-    const authStorage = localStorage.getItem('auth-storage');
-    console.log('💾 Auth storage:', authStorage);
+    // Primeiro tenta pegar do localStorage direto (mais confiável)
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      console.log('📦 Token direto encontrado');
+      console.log('🔑 Token preview:', token.substring(0, 50) + '...');
 
+      // Verificar formato do token
+      const parts = token.split('.');
+      console.log('📋 Token parts:', parts.length, 'should be 3 for JWT');
+
+      if (parts.length === 3) {
+        try {
+          const payload = JSON.parse(atob(parts[1]));
+          console.log('📄 Token payload:', payload);
+        } catch (e) {
+          console.warn('❌ Erro ao decodificar payload:', e);
+        }
+      }
+
+      console.log('✅ Usando token do localStorage');
+      return { 'Authorization': `Bearer ${token}` };
+    }
+
+    // Fallback para Zustand persist storage
+    const authStorage = localStorage.getItem('auth-storage');
     if (authStorage) {
       try {
         const parsed = JSON.parse(authStorage);
-        console.log('📄 Parsed storage:', parsed);
-        const token = parsed?.state?.accessToken;
-        console.log('🎟️ Token encontrado:', token ? 'Sim' : 'Não');
-        if (token) {
-          console.log('✅ Usando token do Zustand storage');
-          return { 'Authorization': `Bearer ${token}` };
+        const zustandToken = parsed?.state?.accessToken;
+        if (zustandToken) {
+          console.log('📄 Token do Zustand encontrado');
+          console.log('✅ Usando token do Zustand');
+          return { 'Authorization': `Bearer ${zustandToken}` };
         }
       } catch (e) {
         console.warn('❌ Erro ao parsear auth storage:', e);
       }
-    }
-
-    // Fallback para access_token direto no localStorage
-    const token = localStorage.getItem('access_token');
-    console.log('🔄 Fallback token:', token ? 'Encontrado' : 'Não encontrado');
-
-    if (token) {
-      console.log('✅ Usando token do localStorage direto');
-      return { 'Authorization': `Bearer ${token}` };
     }
 
     console.log('❌ Nenhum token encontrado!');
@@ -113,9 +171,14 @@ class AuthenticatedApi {
   }
 
   async post<T>(endpoint: string, data?: any): Promise<T> {
+    const headers = this.getAuthHeaders();
+    console.log('📤 POST Headers being sent:', headers);
+    console.log('📤 POST Endpoint:', endpoint);
+    console.log('📤 POST Data:', data);
+
     return fetchApi<T>(endpoint, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      headers: headers,
       body: data ? JSON.stringify(data) : undefined,
     });
   }
