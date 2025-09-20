@@ -2,8 +2,8 @@
 export * from './features/tasks';
 export * from './features/notifications';
 
-// Reusable
-export * from './reusable';
+// UI Components
+export * from './ui';
 
-// Layout
-export * from './layout';
+// Modals
+export * from './modals';

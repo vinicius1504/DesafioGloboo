@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Calendar, User, Clock, Tag, Users } from 'lucide-react';
-import { Task, TaskViewModalProps } from '@/types';
+import type { TaskViewModalProps } from '@/types';
 
 const TaskViewModal: React.FC<TaskViewModalProps> = ({ isOpen, onClose, task }) => {
   if (!isOpen || !task) return null;
@@ -75,16 +75,19 @@ const TaskViewModal: React.FC<TaskViewModalProps> = ({ isOpen, onClose, task }) 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/20 backdrop-blur-md"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div
-        className="relative w-full max-w-3xl rounded-2xl p-6 max-h-[90vh] overflow-y-auto"
+        className="relative w-full max-w-3xl rounded-2xl p-6 max-h-[90vh] overflow-y-auto bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl"
         style={{
-          backgroundColor: 'var(--bg-card)',
-          boxShadow: 'var(--shadow-lg)'
+          background: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
         }}
       >
         {/* Header */}

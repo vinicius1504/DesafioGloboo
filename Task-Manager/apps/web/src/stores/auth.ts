@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi, ApiError } from '@/lib/api'
 import { toast } from 'react-hot-toast'
-import { AuthUser, AuthState } from '@/types'
+import type { AuthState } from '@/types'
 
 export const useAuthStore = create<AuthState>()(
   persist(

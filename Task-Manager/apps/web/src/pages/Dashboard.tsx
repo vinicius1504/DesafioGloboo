@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useTheme } from '@/theme';
+import { useNavigate } from '@tanstack/react-router';
+import { useTheme } from '@/providers';
 import { useAuthStore } from '@/stores/auth';
 import { Sun, Moon, Search, Plus, BarChart3, Bell } from 'lucide-react';
-import { TaskCard, TaskModal, TaskViewModal, NotificationCenter, SocketProvider } from '@/components';
+import { TaskCard, TaskModal, TaskViewModal, NotificationCenter } from '@/components';
+import { SocketProvider } from '@/providers';
 import { api } from '@/lib/api';
-import { useNotifications } from '@/hooks/useNotifications';
 import { useNotificationCenter } from '@/hooks/useNotificationCenter';
-import { Task } from '@/types';
+import type { Task } from '@/types';
 
 
 const DashboardContent: React.FC = () => {
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-  const { user, logout, debugAuth } = useAuthStore();
-  const { showTaskCreated, showTaskUpdated, showTaskDeleted, showError, showConnectionError } = useNotifications();
+  const { user, logout, debugAuth, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      navigate({ to: '/login' });
+    }
+  }, [isAuthenticated, user, navigate]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,10 +43,18 @@ const DashboardContent: React.FC = () => {
   } = useNotificationCenter();
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (isAuthenticated && user) {
+      fetchTasks();
+    }
+  }, [isAuthenticated, user]);
 
   const fetchTasks = async () => {
+    if (!isAuthenticated || !user) {
+      console.log('🚫 Usuário não autenticado, não buscando tarefas');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       console.log('🔄 Iniciando fetchTasks...');
@@ -54,7 +69,21 @@ const DashboardContent: React.FC = () => {
       setTasks(tasksArray);
     } catch (error) {
       console.error('❌ Erro ao buscar tarefas:', error);
-      showConnectionError();
+
+      // Verificar se é erro de autenticação
+      if (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 401) {
+        addNotification({
+          message: 'Sessão expirada. Faça login novamente.',
+          type: 'error'
+        });
+        logout(false); // Logout sem toast para evitar conflito
+        navigate({ to: '/login' });
+      } else {
+        addNotification({
+          message: 'Erro de conexão ao carregar tarefas. Verifique sua internet.',
+          type: 'error'
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -80,7 +109,6 @@ const DashboardContent: React.FC = () => {
 
       const response = await api.post<Task>('/api/tasks', backendData);
       setTasks(prev => [...prev, response]);
-      showTaskCreated(taskData.title || 'Nova tarefa');
 
       // Adicionar notificação ao centro de notificações
       addNotification({
@@ -91,7 +119,6 @@ const DashboardContent: React.FC = () => {
       setIsTaskModalOpen(false);
     } catch (error) {
       console.error('Erro ao criar tarefa:', error);
-      showError('Erro ao criar tarefa');
 
       // Adicionar notificação de erro ao centro de notificações
       addNotification({
@@ -125,7 +152,6 @@ const DashboardContent: React.FC = () => {
       setTasks(prev => prev.map(task =>
         task.id === editingTask.id ? response : task
       ));
-      showTaskUpdated(editingTask.title);
 
       // Adicionar notificação ao centro de notificações
       addNotification({
@@ -137,7 +163,6 @@ const DashboardContent: React.FC = () => {
       setIsTaskModalOpen(false);
     } catch (error) {
       console.error('Erro ao editar tarefa:', error);
-      showError('Erro ao editar tarefa');
 
       // Adicionar notificação de erro ao centro de notificações
       addNotification({
@@ -162,7 +187,6 @@ const DashboardContent: React.FC = () => {
     try {
       await api.delete(`/api/tasks/${taskId}`);
       setTasks(prev => prev.filter(task => task.id !== taskId));
-      showTaskDeleted(taskToDelete?.title || 'Tarefa');
 
       // Adicionar notificação ao centro de notificações
       addNotification({
@@ -171,7 +195,6 @@ const DashboardContent: React.FC = () => {
       });
     } catch (error) {
       console.error('Erro ao excluir tarefa:', error);
-      showError('Erro ao excluir tarefa');
 
       // Adicionar notificação de erro ao centro de notificações
       addNotification({

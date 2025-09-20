@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '@/stores/auth';
-import { OnlineUser, UseSocketReturn } from '@/types';
+import type { OnlineUser, UseSocketReturn } from '@/types';
 
 export const useSocket = (): UseSocketReturn => {
   const [socket, setSocket] = useState<Socket | null>(null);

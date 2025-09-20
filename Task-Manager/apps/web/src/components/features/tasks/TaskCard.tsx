@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar, Edit, Trash2, User, Eye } from 'lucide-react';
-import { Task, TaskCardProps } from '@/types';
+import type { TaskCardProps } from '@/types';
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onView }) => {
   const getStatusBadge = (status: string) => {

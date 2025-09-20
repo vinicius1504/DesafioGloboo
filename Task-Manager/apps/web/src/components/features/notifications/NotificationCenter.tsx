@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Bell, User, CheckCircle, AlertCircle, Info } from 'lucide-react';
-import { Notification, NotificationCenterProps } from '@/types';
+import type { NotificationCenterProps } from '@/types';
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({
   notifications,

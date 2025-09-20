@@ -1,34 +1,50 @@
-// import { createRouter, createRoute, createRootRoute } from '@tanstack/react-router';
-// import { Root } from '../components/layout/Root';
-// import { Login } from '../pages/Login';
-// import { Tasks } from '../pages/Tasks';
-// import { TaskDetail } from '../pages/TaskDetail';
+import { createRouter, createRoute, createRootRoute } from '@tanstack/react-router';
+import Root from '../components/layout/Root';
+import Login from '../pages/Login';
+import Dashboard from '../pages/Dashboard';
+import Tasks from '../pages/Tasks';
+import TaskDetail from '../pages/TaskDetail';
 
-// const rootRoute = createRootRoute({
-//   component: Root,
-// });
+const rootRoute = createRootRoute({
+  component: Root,
+});
 
-// const loginRoute = createRoute({
-//   getParentRoute: () => rootRoute,
-//   path: '/login',
-//   component: Login,
-// });
+const indexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  component: Login,
+});
 
-// const tasksRoute = createRoute({
-//   getParentRoute: () => rootRoute,
-//   path: '/tasks',
-//   component: Tasks,
-// });
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  component: Login,
+});
 
-// const taskDetailRoute = createRoute({
-//   getParentRoute: () => rootRoute,
-//   path: '/tasks/$taskId',
-//   component: TaskDetail,
-// });
+const dashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/dashboard',
+  component: Dashboard,
+});
 
-// const routeTree = rootRoute.addChildren([loginRoute, tasksRoute, taskDetailRoute]);
+const tasksRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tasks',
+  component: Tasks,
+});
 
-// export const router = createRouter({ routeTree });
+const taskDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tasks/$taskId',
+  component: TaskDetail,
+});
 
-// Comentado temporariamente - as rotas estão sendo gerenciadas diretamente no App.tsx
-export {};  
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  loginRoute,
+  dashboardRoute,
+  tasksRoute,
+  taskDetailRoute
+]);
+
+export const router = createRouter({ routeTree });

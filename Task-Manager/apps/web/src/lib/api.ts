@@ -80,43 +80,6 @@ export const authApi = {
 
 // Authenticated API instance
 class AuthenticatedApi {
-  // private isTokenExpired(token: string): boolean {
-  //   try {
-  //     const payload = JSON.parse(atob(token.split('.')[1]));
-  //     const now = Math.floor(Date.now() / 1000);
-  //     const expired = payload.exp < now;
-
-  //     console.log('🕐 Token expiration check:', {
-  //       exp: payload.exp,
-  //       now: now,
-  //       expired: expired,
-  //       timeUntilExp: payload.exp - now,
-  //       expDate: new Date(payload.exp * 1000).toLocaleString()
-  //     });
-
-  //     return expired;
-  //   } catch (error) {
-  //     console.warn('❌ Erro ao verificar token:', error);
-  //     return true;
-  //   }
-  // }
-
-  // private clearTokens() {
-  //   localStorage.removeItem('access_token');
-  //   localStorage.removeItem('refresh_token');
-  //   localStorage.removeItem('auth-storage');
-  //   console.log('🧹 Tokens expirados removidos');
-
-  //   // Forçar logout no store sem redirecionamento automático
-  //   try {
-  //     import('../stores/auth').then(({ useAuthStore }) => {
-  //       useAuthStore.getState().logout(false);
-  //     });
-  //   } catch (error) {
-  //     console.warn('Erro ao fazer logout:', error);
-  //   }
-  // }
-
   private getAuthHeaders(): Record<string, string> {
     console.log('🔍 Buscando token de autenticação...');
 
