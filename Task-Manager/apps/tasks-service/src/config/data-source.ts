@@ -4,6 +4,7 @@ import { Comment } from '../comments/entities/comment.entity';
 import { User } from '../users/entities/user.entity';
 import { AuditLog } from '../audit/entities/audit-log.entity';
 import { AddCreatedByToTasks1732376400000 } from '../migrations/1732376400000-AddCreatedByToTasks';
+import { CreateAuditLog1732275600000 } from '../migrations/1732275600000-CreateAuditLog';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -13,7 +14,7 @@ export const dataSourceOptions: DataSourceOptions = {
   password: process.env.DATABASE_PASSWORD || 'password',
   database: process.env.DATABASE_NAME || 'tasks_db',
   entities: [Task, Comment, User, AuditLog],
-  migrations: [AddCreatedByToTasks1732376400000],
+  migrations: [CreateAuditLog1732275600000, AddCreatedByToTasks1732376400000],
   synchronize: false, // Disable auto-sync
   migrationsRun: true, // Auto-run migrations on startup
   logging: process.env.NODE_ENV === 'development',

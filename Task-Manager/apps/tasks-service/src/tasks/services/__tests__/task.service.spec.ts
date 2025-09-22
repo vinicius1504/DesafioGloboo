@@ -7,6 +7,7 @@ import { Task, TaskPriority, TaskStatus } from '../../entities/task.entity';
 import { User } from '../../../users/entities/user.entity';
 import { CreateTaskDto, UpdateTaskDto } from '../../dto/task.dto';
 import { RabbitMQService } from '../../../shared/services/rabbitmq.service';
+import { AuditService } from '../../../audit/audit.service';
 
 describe('TaskService', () => {
   let service: TaskService;
@@ -20,6 +21,7 @@ describe('TaskService', () => {
     findAndCount: jest.fn(),
     findOne: jest.fn(),
     remove: jest.fn(),
+    createQueryBuilder: jest.fn(),
   };
 
   const mockUserRepository = {
@@ -28,6 +30,12 @@ describe('TaskService', () => {
 
   const mockRabbitMQService = {
     publishTaskEvent: jest.fn(),
+  };
+
+  const mockAuditService = {
+    logTaskCreated: jest.fn(),
+    logTaskUpdated: jest.fn(),
+    logTaskDeleted: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -45,6 +53,10 @@ describe('TaskService', () => {
         {
           provide: RabbitMQService,
           useValue: mockRabbitMQService,
+        },
+        {
+          provide: AuditService,
+          useValue: mockAuditService,
         },
       ],
     }).compile();
@@ -86,6 +98,7 @@ describe('TaskService', () => {
       expect(mockUserRepository.findByIds).not.toHaveBeenCalled();
       expect(mockTaskRepository.create).toHaveBeenCalledWith({
         ...createTaskDto,
+        createdBy: userId,
         assignedUsers: [],
       });
       expect(mockTaskRepository.save).toHaveBeenCalledWith(mockTask);
@@ -131,6 +144,7 @@ describe('TaskService', () => {
       expect(mockTaskRepository.create).toHaveBeenCalledWith({
         title: 'Test Task',
         description: 'Test Description',
+        createdBy: userId,
         assignedUsers: mockUsers,
       });
       expect(result).toEqual(mockTask);
@@ -164,22 +178,30 @@ describe('TaskService', () => {
   describe('findAll', () => {
     it('should return paginated tasks', async () => {
       const pagination = { page: 2, size: 5 };
+      const userId = 'user-123';
       const mockTasks = [
         { id: 'task-1', title: 'Task 1' },
         { id: 'task-2', title: 'Task 2' },
       ];
       const total = 12;
 
-      mockTaskRepository.findAndCount.mockResolvedValue([mockTasks, total]);
+      // Mock the query builder
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([mockTasks, total]),
+      };
 
-      const result = await service.findAll(pagination);
+      mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
-      expect(mockTaskRepository.findAndCount).toHaveBeenCalledWith({
-        skip: 5, // (page-1) * size = 5
-        take: 5,
-        relations: ['assignedUsers', 'comments', 'comments.user'],
-        order: { createdAt: 'DESC' },
-      });
+      const result = await service.findAll(pagination, userId);
+
+      expect(mockTaskRepository.createQueryBuilder).toHaveBeenCalledWith('task');
+      expect(mockQueryBuilder.getManyAndCount).toHaveBeenCalled();
       expect(result).toEqual({
         data: mockTasks,
         total: 12,
@@ -191,19 +213,27 @@ describe('TaskService', () => {
 
     it('should use default pagination values', async () => {
       const pagination = {};
+      const userId = 'user-123';
       const mockTasks = [];
       const total = 0;
 
-      mockTaskRepository.findAndCount.mockResolvedValue([mockTasks, total]);
+      // Mock the query builder
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        orWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest.fn().mockResolvedValue([mockTasks, total]),
+      };
 
-      const result = await service.findAll(pagination);
+      mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
-      expect(mockTaskRepository.findAndCount).toHaveBeenCalledWith({
-        skip: 0,
-        take: 10,
-        relations: ['assignedUsers', 'comments', 'comments.user'],
-        order: { createdAt: 'DESC' },
-      });
+      const result = await service.findAll(pagination, userId);
+
+      expect(mockTaskRepository.createQueryBuilder).toHaveBeenCalledWith('task');
+      expect(mockQueryBuilder.getManyAndCount).toHaveBeenCalled();
       expect(result).toEqual({
         data: mockTasks,
         total: 0,
@@ -217,6 +247,7 @@ describe('TaskService', () => {
   describe('findOne', () => {
     it('should return a task when found', async () => {
       const taskId = 'task-123';
+      const userId = 'user-456';
       const mockTask = {
         id: taskId,
         title: 'Test Task',
@@ -224,27 +255,40 @@ describe('TaskService', () => {
         comments: [],
       };
 
-      mockTaskRepository.findOne.mockResolvedValue(mockTask);
+      // Mock the query builder
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(mockTask),
+      };
 
-      const result = await service.findOne(taskId);
+      mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
-      expect(mockTaskRepository.findOne).toHaveBeenCalledWith({
-        where: { id: taskId },
-        relations: ['assignedUsers', 'comments', 'comments.user'],
-      });
+      const result = await service.findOne(taskId, userId);
+
+      expect(mockTaskRepository.createQueryBuilder).toHaveBeenCalledWith('task');
+      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
       expect(result).toEqual(mockTask);
     });
 
     it('should throw NotFoundException when task not found', async () => {
       const taskId = 'non-existent-task';
+      const userId = 'user-456';
 
-      mockTaskRepository.findOne.mockResolvedValue(null);
+      // Mock the query builder
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(null),
+      };
 
-      await expect(service.findOne(taskId)).rejects.toThrow(NotFoundException);
-      expect(mockTaskRepository.findOne).toHaveBeenCalledWith({
-        where: { id: taskId },
-        relations: ['assignedUsers', 'comments', 'comments.user'],
-      });
+      mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      await expect(service.findOne(taskId, userId)).rejects.toThrow(NotFoundException);
+      expect(mockTaskRepository.createQueryBuilder).toHaveBeenCalledWith('task');
+      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
     });
   });
 
@@ -272,17 +316,23 @@ describe('TaskService', () => {
         assignedUsers: mockUsers,
       };
 
-      mockTaskRepository.findOne.mockResolvedValue(existingTask);
+      // Mock the query builder for findOne
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(existingTask),
+      };
+
+      mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockUserRepository.findByIds.mockResolvedValue(mockUsers);
       mockTaskRepository.save.mockResolvedValue(updatedTask);
       mockRabbitMQService.publishTaskEvent.mockResolvedValue(true);
 
       const result = await service.update(taskId, updateTaskDto, userId);
 
-      expect(mockTaskRepository.findOne).toHaveBeenCalledWith({
-        where: { id: taskId },
-        relations: ['assignedUsers', 'comments', 'comments.user'],
-      });
+      expect(mockTaskRepository.createQueryBuilder).toHaveBeenCalledWith('task');
+      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
       expect(mockUserRepository.findByIds).toHaveBeenCalledWith(['user-789']);
       expect(mockTaskRepository.save).toHaveBeenCalledWith(existingTask);
       expect(mockRabbitMQService.publishTaskEvent).toHaveBeenCalledWith({
@@ -314,12 +364,22 @@ describe('TaskService', () => {
         title: 'Updated Title',
       };
 
-      mockTaskRepository.findOne.mockResolvedValue(existingTask);
+      // Mock the query builder for findOne
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(existingTask),
+      };
+
+      mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockTaskRepository.save.mockResolvedValue(updatedTask);
       mockRabbitMQService.publishTaskEvent.mockResolvedValue(true);
 
       const result = await service.update(taskId, updateTaskDto, userId);
 
+      expect(mockTaskRepository.createQueryBuilder).toHaveBeenCalledWith('task');
+      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
       expect(mockUserRepository.findByIds).not.toHaveBeenCalled();
       expect(result).toEqual(updatedTask);
     });
@@ -340,13 +400,23 @@ describe('TaskService', () => {
         assignedUsers: [],
       };
 
-      mockTaskRepository.findOne.mockResolvedValue(existingTask);
+      // Mock the query builder for findOne
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(existingTask),
+      };
+
+      mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockUserRepository.findByIds.mockResolvedValue([]);
       mockTaskRepository.save.mockResolvedValue(updatedTask);
       mockRabbitMQService.publishTaskEvent.mockResolvedValue(true);
 
       const result = await service.update(taskId, updateTaskDto, userId);
 
+      expect(mockTaskRepository.createQueryBuilder).toHaveBeenCalledWith('task');
+      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
       expect(mockUserRepository.findByIds).not.toHaveBeenCalled();
       expect(result.assignedUsers).toEqual([]);
     });
@@ -356,9 +426,19 @@ describe('TaskService', () => {
       const updateTaskDto: UpdateTaskDto = { title: 'New Title' };
       const userId = 'user-456';
 
-      mockTaskRepository.findOne.mockResolvedValue(null);
+      // Mock the query builder for findOne
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(null),
+      };
+
+      mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       await expect(service.update(taskId, updateTaskDto, userId)).rejects.toThrow(NotFoundException);
+      expect(mockTaskRepository.createQueryBuilder).toHaveBeenCalledWith('task');
+      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
     });
   });
 
@@ -371,15 +451,21 @@ describe('TaskService', () => {
         title: 'Test Task',
       };
 
-      mockTaskRepository.findOne.mockResolvedValue(mockTask);
+      // Mock the query builder for findOne
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(mockTask),
+      };
+
+      mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       mockTaskRepository.remove.mockResolvedValue(mockTask);
 
       await service.remove(taskId, userId);
 
-      expect(mockTaskRepository.findOne).toHaveBeenCalledWith({
-        where: { id: taskId },
-        relations: ['assignedUsers', 'comments', 'comments.user'],
-      });
+      expect(mockTaskRepository.createQueryBuilder).toHaveBeenCalledWith('task');
+      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
       expect(mockTaskRepository.remove).toHaveBeenCalledWith(mockTask);
     });
 
@@ -387,9 +473,19 @@ describe('TaskService', () => {
       const taskId = 'non-existent-task';
       const userId = 'user-456';
 
-      mockTaskRepository.findOne.mockResolvedValue(null);
+      // Mock the query builder for findOne
+      const mockQueryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(null),
+      };
+
+      mockTaskRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
 
       await expect(service.remove(taskId, userId)).rejects.toThrow(NotFoundException);
+      expect(mockTaskRepository.createQueryBuilder).toHaveBeenCalledWith('task');
+      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
     });
   });
 });

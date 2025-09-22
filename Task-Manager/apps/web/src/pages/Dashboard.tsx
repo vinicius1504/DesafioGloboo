@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTheme } from '@/providers';
 import { useAuthStore } from '@/stores/auth';
 import { Sun, Moon, Search, Plus, BarChart3, Bell, Grid3X3, Kanban, Table } from 'lucide-react';
-import { TaskCard, TaskModal, TaskViewModal, NotificationCenter } from '@/components';
+import { TaskCard, TaskModal, TaskViewModal, NotificationCenter, ConfirmModal } from '@/components';
 import KanbanView from '@/components/views/KanbanView';
 import TableView from '@/components/views/TableView';
 import Header from '@/components/layout/Header';
@@ -36,6 +36,10 @@ const DashboardContent: React.FC = () => {
   const [showDashboard, setShowDashboard] = useState(false);
   const [showNotifications, setShowNotifications] = useState(true);
   const [viewMode, setViewMode] = useState<'cards' | 'kanban' | 'table'>('cards');
+
+  // Delete confirmation modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   // Notification Center
   const {
@@ -178,24 +182,23 @@ const DashboardContent: React.FC = () => {
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    const taskToDelete = tasks.find(task => task.id === taskId);
-
-    // Confirmação antes de excluir
-    const confirmDelete = window.confirm(
-      `Tem certeza que deseja excluir a tarefa "${taskToDelete?.title}"?\n\nEsta ação não pode ser desfeita.`
-    );
-
-    if (!confirmDelete) {
-      return; // Usuário cancelou
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      setTaskToDelete(task);
+      setIsDeleteModalOpen(true);
     }
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
 
     try {
-      await api.delete(`/api/tasks/${taskId}`);
-      setTasks(prev => prev.filter(task => task.id !== taskId));
+      await api.delete(`/api/tasks/${taskToDelete.id}`);
+      setTasks(prev => prev.filter(task => task.id !== taskToDelete.id));
 
       // Adicionar notificação ao centro de notificações
       addNotification({
-        message: `Tarefa "${taskToDelete?.title || 'Tarefa'}" foi excluída com sucesso!`,
+        message: `Tarefa "${taskToDelete.title}" foi excluída com sucesso!`,
         type: 'success'
       });
     } catch (error) {
@@ -215,7 +218,7 @@ const DashboardContent: React.FC = () => {
 
     try {
       // Preparar dados para o backend
-      const backendData = {
+      const backendData: any = {
         title: taskToUpdate.title,
         description: taskToUpdate.description,
         status: newStatus,
@@ -236,7 +239,7 @@ const DashboardContent: React.FC = () => {
       ));
 
       // Mapear status para display
-      const statusDisplayMap = {
+      const statusDisplayMap: Record<'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE', string> = {
         'TODO': 'A Fazer',
         'IN_PROGRESS': 'Em Progresso',
         'REVIEW': 'Em Revisão',
@@ -245,7 +248,7 @@ const DashboardContent: React.FC = () => {
 
       // Adicionar notificação de sucesso
       addNotification({
-        message: `Tarefa "${taskToUpdate.title}" movida para "${statusDisplayMap[newStatus]}"!`,
+        message: `Tarefa "${taskToUpdate.title}" movida para "${statusDisplayMap[newStatus as keyof typeof statusDisplayMap]}"!`,
         type: 'success'
       });
     } catch (error) {
@@ -607,6 +610,21 @@ const DashboardContent: React.FC = () => {
           task={viewingTask}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setTaskToDelete(null);
+        }}
+        onConfirm={confirmDeleteTask}
+        title="Excluir Tarefa"
+        description={`Tem certeza que deseja excluir a tarefa "${taskToDelete?.title}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="danger"
+      />
 
       {/* Notification Center */}
       {showNotifications && (

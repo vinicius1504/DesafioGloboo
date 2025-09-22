@@ -10,6 +10,6 @@ export const getDatabaseConfig = (configService: ConfigService): TypeOrmModuleOp
   database: configService.get('DATABASE_NAME', 'task_manager_bd'),
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/../../migrations/*{.ts,.js}'],
-  synchronize: true,
+  synchronize: false,
   logging: false,
 });
