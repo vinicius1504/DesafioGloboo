@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Bell, User, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import type { NotificationCenterProps } from '@/types';
 
@@ -11,6 +11,24 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   onToggleVisibility
 }) => {
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  // Close notification panel when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        onToggleVisibility?.();
+      }
+    };
+
+    if (isVisible) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isVisible, onToggleVisibility]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -39,7 +57,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   if (!isVisible || notifications.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-96 max-w-sm">
+    <div ref={notificationRef} className="fixed bottom-4 right-4 z-50 w-96 max-w-sm">
       {/* Header */}
       <div
         className="rounded-t-lg px-4 py-3 flex items-center justify-between border-b"
@@ -101,7 +119,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         {notifications.slice(0, 5).map((notification) => (
           <div
             key={notification.id}
-            className={`group px-4 py-3 border-b transition-colors cursor-pointer hover:bg-opacity-50 ${
+            className={`group px-4 py-3 border-b transition-all duration-200 cursor-pointer hover:bg-opacity-50 ${
               !notification.isRead ? 'border-l-4' : ''
             }`}
             style={{
@@ -109,7 +127,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
               borderLeftColor: !notification.isRead ? 'var(--brand-primary)' : 'transparent',
               backgroundColor: !notification.isRead ? 'var(--bg-secondary)' : 'transparent'
             }}
-            onClick={() => onMarkAsRead(notification.id)}
+            onClick={() => {
+              if (!notification.isRead) {
+                onMarkAsRead(notification.id);
+              }
+            }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
             }}
@@ -118,8 +140,14 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
             }}
           >
             <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-1">
+              <div className="flex-shrink-0 mt-1 relative">
                 {getNotificationIcon(notification.type)}
+                {!notification.isRead && (
+                  <div
+                    className="absolute -top-1 -right-1 w-3 h-3 rounded-full"
+                    style={{ backgroundColor: 'var(--brand-primary)' }}
+                  />
+                )}
               </div>
 
               <div className="flex-1 min-w-0">

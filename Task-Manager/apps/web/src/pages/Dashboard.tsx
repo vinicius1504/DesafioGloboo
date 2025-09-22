@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate } from '@tanstack/react-router';
 import { useTheme } from '@/providers';
 import { useAuthStore } from '@/stores/auth';
-import { Sun, Moon, Search, Plus, BarChart3, Bell } from 'lucide-react';
+import { Sun, Moon, Search, Plus, BarChart3, Bell, Grid3X3, Kanban, Table } from 'lucide-react';
 import { TaskCard, TaskModal, TaskViewModal, NotificationCenter } from '@/components';
+import KanbanView from '@/components/views/KanbanView';
+import TableView from '@/components/views/TableView';
+import Header from '@/components/layout/Header';
 import { SocketProvider } from '@/providers';
 import { api } from '@/lib/api';
 import { useNotificationCenter } from '@/hooks/useNotificationCenter';
@@ -12,7 +16,7 @@ import type { Task } from '@/types';
 
 const DashboardContent: React.FC = () => {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
+  useTheme();
   const { user, logout, debugAuth, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
@@ -31,6 +35,7 @@ const DashboardContent: React.FC = () => {
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [showNotifications, setShowNotifications] = useState(true);
+  const [viewMode, setViewMode] = useState<'cards' | 'kanban' | 'table'>('cards');
 
   // Notification Center
   const {
@@ -204,6 +209,56 @@ const DashboardContent: React.FC = () => {
     }
   };
 
+  const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
+    const taskToUpdate = tasks.find(task => task.id === taskId);
+    if (!taskToUpdate) return;
+
+    try {
+      // Preparar dados para o backend
+      const backendData = {
+        title: taskToUpdate.title,
+        description: taskToUpdate.description,
+        status: newStatus,
+        priority: taskToUpdate.priority,
+        dueDate: taskToUpdate.dueDate
+      };
+
+      // Adicionar assignedUserIds se existirem
+      if (taskToUpdate.assignedUsers && taskToUpdate.assignedUsers.length > 0) {
+        backendData.assignedUserIds = taskToUpdate.assignedUsers.map(user => user.id);
+      }
+
+      const response = await api.put<Task>(`/api/tasks/${taskId}`, backendData);
+
+      // Atualizar a lista de tarefas
+      setTasks(prev => prev.map(task =>
+        task.id === taskId ? response : task
+      ));
+
+      // Mapear status para display
+      const statusDisplayMap = {
+        'TODO': 'A Fazer',
+        'IN_PROGRESS': 'Em Progresso',
+        'REVIEW': 'Em Revisão',
+        'DONE': 'Concluído'
+      };
+
+      // Adicionar notificação de sucesso
+      addNotification({
+        message: `Tarefa "${taskToUpdate.title}" movida para "${statusDisplayMap[newStatus]}"!`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status da tarefa:', error);
+
+      // Adicionar notificação de erro
+      addNotification({
+        message: 'Erro ao mover tarefa. Tente novamente.',
+        type: 'error'
+      });
+    }
+  };
+
   const openEditModal = (task: Task) => {
     setEditingTask(task);
     setIsTaskModalOpen(true);
@@ -266,66 +321,34 @@ const DashboardContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
-      {/* Header */}
-      <header className="w-full px-6 py-4 shadow-sm" style={{ background: 'var(--gradient-bg)' }}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Task Manager Pro</h1>
-            <p className="text-white/80 text-sm">Gerencie suas tarefas de forma eficiente e colaborativa</p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            {/* Notification Bell */}
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-            >
-              <Bell className="w-5 h-5 text-white" />
-              {unreadCount > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold"
-                  style={{ fontSize: '10px' }}
-                >
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
-
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-            >
-              {theme === 'light' ? <Moon className="w-5 h-5 text-white" /> : <Sun className="w-5 h-5 text-white" />}
-            </button>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={debugAuth}
-                className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-white text-xs transition-colors"
-              >
-                Debug
-              </button>
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">
-                  {user?.username?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              </div>
-              <button
-                onClick={() => logout()}
-                className="text-white/80 hover:text-white text-sm transition-colors"
-              >
-                Sair
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen"
+      style={{ backgroundColor: 'var(--bg-primary)' }}
+    >
+      <Header
+        unreadCount={unreadCount}
+        showNotifications={showNotifications}
+        onToggleNotifications={() => setShowNotifications(!showNotifications)}
+      />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="max-w-7xl mx-auto px-6 py-8"
+      >
         {/* Controls */}
-        <div className="rounded-2xl p-6 mb-8 shadow-sm" style={{ backgroundColor: 'var(--bg-card)' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="rounded-2xl p-6 mb-8 shadow-sm"
+          style={{ backgroundColor: 'var(--bg-card)' }}
+        >
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between mb-6">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
@@ -335,7 +358,7 @@ const DashboardContent: React.FC = () => {
                 placeholder="Buscar tarefas..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border transition-colors focus:outline-none focus:ring-2"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2"
                 style={{
                   backgroundColor: 'var(--bg-secondary)',
                   borderColor: 'var(--border-color)',
@@ -393,6 +416,43 @@ const DashboardContent: React.FC = () => {
                 Dashboard
               </button>
 
+              {/* View Mode Selector */}
+              <div className="flex rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className="px-3 py-2 flex items-center gap-2 transition-colors"
+                  style={{
+                    backgroundColor: viewMode === 'cards' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                    color: viewMode === 'cards' ? 'white' : 'var(--text-primary)'
+                  }}
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                  Cards
+                </button>
+                <button
+                  onClick={() => setViewMode('kanban')}
+                  className="px-3 py-2 flex items-center gap-2 transition-colors"
+                  style={{
+                    backgroundColor: viewMode === 'kanban' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                    color: viewMode === 'kanban' ? 'white' : 'var(--text-primary)'
+                  }}
+                >
+                  <Kanban className="w-4 h-4" />
+                  Kanban
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className="px-3 py-2 flex items-center gap-2 transition-colors"
+                  style={{
+                    backgroundColor: viewMode === 'table' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                    color: viewMode === 'table' ? 'white' : 'var(--text-primary)'
+                  }}
+                >
+                  <Table className="w-4 h-4" />
+                  Tabela
+                </button>
+              </div>
+
               <button
                 onClick={clearFilters}
                 className="px-4 py-2 text-sm rounded-lg transition-colors"
@@ -404,59 +464,115 @@ const DashboardContent: React.FC = () => {
           </div>
 
           {/* New Task Button */}
-          <button
+          <motion.button
             onClick={openCreateModal}
-            className="w-full py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full py-3 rounded-lg flex items-center justify-center gap-2"
             style={{ backgroundColor: 'var(--brand-primary)', color: 'white' }}
           >
             <Plus className="w-5 h-5" />
             Nova Tarefa
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         {/* Dashboard Stats (when enabled) */}
         {showDashboard && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+          >
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="p-6 rounded-xl"
+              style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}
+            >
               <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Total</h3>
               <p className="text-3xl font-bold" style={{ color: 'var(--brand-primary)' }}>{tasks.length}</p>
-            </div>
-            <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="p-6 rounded-xl"
+              style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}
+            >
               <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Em Progresso</h3>
               <p className="text-3xl font-bold" style={{ color: 'var(--status-progress)' }}>
                 {tasks.filter(t => t.status === 'IN_PROGRESS').length}
               </p>
-            </div>
-            <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="p-6 rounded-xl"
+              style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}
+            >
               <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Pendentes</h3>
               <p className="text-3xl font-bold" style={{ color: 'var(--status-todo)' }}>
                 {tasks.filter(t => t.status === 'TODO').length}
               </p>
-            </div>
-            <div className="p-6 rounded-xl" style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="p-6 rounded-xl"
+              style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}
+            >
               <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Urgentes</h3>
               <p className="text-3xl font-bold" style={{ color: 'var(--status-urgent)' }}>
                 {tasks.filter(t => t.status === 'DONE').length}
               </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         )}
 
-        {/* Tasks Grid */}
+        {/* Tasks Display */}
         {filteredTasks.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onView={() => openViewModal(task)}
-                onEdit={() => openEditModal(task)}
-                onDelete={() => handleDeleteTask(task.id)}
+          <>
+            {viewMode === 'cards' && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                {filteredTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onView={() => openViewModal(task)}
+                    onEdit={() => openEditModal(task)}
+                    onDelete={() => handleDeleteTask(task.id)}
+                  />
+                ))}
+              </motion.div>
+            )}
+
+            {viewMode === 'kanban' && (
+              <KanbanView
+                tasks={filteredTasks}
+                onView={openViewModal}
+                onEdit={openEditModal}
+                onDelete={handleDeleteTask}
+                onUpdateTaskStatus={handleUpdateTaskStatus}
               />
-            ))}
-          </div>
+            )}
+
+            {viewMode === 'table' && (
+              <TableView
+                tasks={filteredTasks}
+                onView={openViewModal}
+                onEdit={openEditModal}
+                onDelete={handleDeleteTask}
+              />
+            )}
+          </>
         ) : (
-          <div className="text-center py-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+            className="text-center py-12"
+          >
             <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--bg-secondary)' }}>
               <Search className="w-12 h-12" style={{ color: 'var(--text-muted)' }} />
             </div>
@@ -466,9 +582,9 @@ const DashboardContent: React.FC = () => {
             <p style={{ color: 'var(--text-secondary)' }}>
               {tasks.length === 0 ? 'Crie sua primeira tarefa!' : 'Tente ajustar os filtros ou termos de busca.'}
             </p>
-          </div>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
 
       {/* Task Modal */}
       {isTaskModalOpen && (
@@ -503,7 +619,7 @@ const DashboardContent: React.FC = () => {
           onToggleVisibility={() => setShowNotifications(false)}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
 

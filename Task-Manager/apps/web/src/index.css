@@ -120,18 +120,18 @@
 
 /* Custom Theme Variables for Task Manager */
 :root[data-theme="light"] {
-  --bg-primary: #f8f9ff;
-  --bg-secondary: #ffffff;
-  --bg-card: #ffffff;
-  --text-primary: #1a1a1a;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
-  --border-color: #e5e7eb;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --bg-primary: #f1f3f7;
+  --bg-secondary: #f8fafc;
+  --bg-card: #fdfdfe;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border-color: #cbd5e1;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
   --status-progress: #3b82f6;
   --status-review: #f59e0b;
-  --status-todo: #6b7280;
+  --status-todo: #64748b;
   --status-urgent: #ef4444;
   --priority-high: #f97316;
   --priority-medium: #eab308;

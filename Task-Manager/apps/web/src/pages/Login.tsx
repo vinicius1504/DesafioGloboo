@@ -22,7 +22,6 @@ export default function LoginPage() {
       {/* Floating shapes animation */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="absolute top-1/4 left-1/4 w-32 h-32 bg-white/10 rounded-full"
           animate={{
             y: [-10, -30, -15, -10],
             x: [0, 15, -10, 0],
@@ -33,9 +32,9 @@ export default function LoginPage() {
             repeat: Infinity,
             ease: "easeInOut"
           }}
+          className="absolute top-1/4 left-1/4 w-32 h-32 bg-white/10 rounded-full"
         />
         <motion.div
-          className="absolute top-3/4 right-1/4 w-24 h-24 bg-white/10 rounded-full"
           animate={{
             y: [0, -20, -35, 0],
             x: [0, -25, 15, 0],
@@ -46,9 +45,9 @@ export default function LoginPage() {
             repeat: Infinity,
             ease: "easeInOut"
           }}
+          className="absolute top-3/4 right-1/4 w-24 h-24 bg-white/10 rounded-full"
         />
         <motion.div
-          className="absolute bottom-1/4 left-1/3 w-16 h-16 bg-white/10 rounded-full"
           animate={{
             y: [0, -40, 0],
             x: [0, 20, 0],
@@ -59,9 +58,9 @@ export default function LoginPage() {
             repeat: Infinity,
             ease: "easeInOut"
           }}
+          className="absolute bottom-1/4 left-1/3 w-16 h-16 bg-white/10 rounded-full"
         />
         <motion.div
-          className="absolute top-1/2 right-1/3 w-20 h-20 bg-white/5 rounded-full"
           animate={{
             y: [0, 20, 35, 15, 0],
             x: [0, -15, 25, -10, 0],
@@ -72,9 +71,9 @@ export default function LoginPage() {
             repeat: Infinity,
             ease: "easeInOut"
           }}
+          className="absolute top-1/2 right-1/3 w-20 h-20 bg-white/5 rounded-full"
         />
         <motion.div
-          className="absolute bottom-1/3 right-1/4 w-12 h-12 bg-white/15 rounded-full"
           animate={{
             y: [-5, -25, -10, -5],
             x: [0, 10, -15, 0],
@@ -85,9 +84,9 @@ export default function LoginPage() {
             repeat: Infinity,
             ease: "easeInOut"
           }}
+          className="absolute bottom-1/3 right-1/4 w-12 h-12 bg-white/15 rounded-full"
         />
         <motion.div
-          className="absolute top-1/3 left-1/2 w-28 h-28 bg-white/8 rounded-full"
           animate={{
             y: [0, -15, -25, -10, 0],
             x: [0, 20, -10, 15, 0],
@@ -98,6 +97,7 @@ export default function LoginPage() {
             repeat: Infinity,
             ease: "easeInOut"
           }}
+          className="absolute top-1/3 left-1/2 w-28 h-28 bg-white/8 rounded-full"
         />
       </div>
 

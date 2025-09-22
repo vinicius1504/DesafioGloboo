@@ -22,13 +22,6 @@ export const useNotificationCenter = () => {
     };
 
     setNotifications(prev => [newNotification, ...prev]);
-
-    // Auto-remove notification after 10 seconds if it's not a task assignment
-    if (notification.type !== 'task_assignment') {
-      setTimeout(() => {
-        setNotifications(prev => prev.filter(n => n.id !== newNotification.id));
-      }, 10000);
-    }
   }, []);
 
   const markAsRead = useCallback((id: string) => {
