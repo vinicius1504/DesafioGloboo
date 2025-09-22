@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { X, User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
+import { loginSchema, type LoginFormData } from '@/lib/validations/auth';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -11,15 +14,21 @@ interface LoginModalProps {
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToRegister }) => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useAuthStore();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(email, password);
+      await login(data.login, data.password);
       onClose();
       navigate({ to: '/dashboard' });
     } catch (error) {
@@ -28,8 +37,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToRegi
   };
 
   const resetForm = () => {
-    setEmail('');
-    setPassword('');
+    reset();
     setShowPassword(false);
   };
 
@@ -80,43 +88,42 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToRegi
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Email/Login */}
           <div>
-            <label
-              className="block text-sm font-medium mb-2 text-white/90"
-            >
-              Email
+            <label className="block text-sm font-medium mb-2 text-white/90">
+              Email ou Username
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60" />
               <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 rounded-lg border border-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
-                placeholder="Digite seu email"
+                {...register('login')}
+                type="text"
+                className={`w-full pl-12 pr-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 ${
+                  errors.login ? 'border-red-500' : 'border-white/20'
+                }`}
+                placeholder="Digite seu email ou username"
                 disabled={isLoading}
               />
             </div>
+            {errors.login && (
+              <p className="mt-1 text-sm text-red-400">{errors.login.message}</p>
+            )}
           </div>
 
           {/* Password */}
           <div>
-            <label
-              className="block text-sm font-medium mb-2 text-white/90"
-            >
+            <label className="block text-sm font-medium mb-2 text-white/90">
               Senha
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60" />
               <input
+                {...register('password')}
                 type={showPassword ? 'text' : 'password'}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-12 pr-12 py-3 rounded-lg border border-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 bg-white/10 backdrop-blur-sm text-white placeholder-white/50"
+                className={`w-full pl-12 pr-12 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 bg-white/10 backdrop-blur-sm text-white placeholder-white/50 ${
+                  errors.password ? 'border-red-500' : 'border-white/20'
+                }`}
                 placeholder="Digite sua senha"
                 disabled={isLoading}
               />
@@ -129,6 +136,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onSwitchToRegi
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
+            )}
           </div>
 
           {/* Submit Button */}

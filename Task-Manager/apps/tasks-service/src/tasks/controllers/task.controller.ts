@@ -54,8 +54,9 @@ export class TaskController {
   @ApiQuery({ name: 'size', required: false, type: Number })
   async findAll(
     @Query() pagination: PaginationDto,
+    @CurrentUser('id') userId: string,
   ): Promise<PaginatedTaskResponseDto> {
-    const result = await this.taskService.findAll(pagination);
+    const result = await this.taskService.findAll(pagination, userId);
     return {
       ...result,
       data: result.data.map(task => this.mapToResponseDto(task)),
@@ -70,8 +71,11 @@ export class TaskController {
     type: TaskResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Task not found' })
-  async findOne(@Param('id') id: string): Promise<TaskResponseDto> {
-    const task = await this.taskService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ): Promise<TaskResponseDto> {
+    const task = await this.taskService.findOne(id, userId);
     return this.mapToResponseDto(task);
   }
 

@@ -10,9 +10,11 @@ import { CommentsModule } from './comments/comments.module';
 import { UsersModule } from './users/users.module';
 import { SharedModule } from './shared/shared.module';
 import { WebSocketModule } from './websockets/websocket.module';
+import { AuditModule } from './audit/audit.module';
 import { Task } from './tasks/entities/task.entity';
 import { Comment } from './comments/entities/comment.entity';
 import { User } from './users/entities/user.entity';
+import { AuditLog } from './audit/entities/audit-log.entity';
 import { dataSourceOptions } from './config/data-source';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
 
@@ -23,7 +25,7 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
       envFilePath: ['.env.local', '.env'],
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
-    TypeOrmModule.forFeature([Task, Comment, User]),
+    TypeOrmModule.forFeature([Task, Comment, User, AuditLog]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -38,6 +40,7 @@ import { JwtStrategy } from './auth/strategies/jwt.strategy';
     UsersModule,
     SharedModule,
     WebSocketModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy],

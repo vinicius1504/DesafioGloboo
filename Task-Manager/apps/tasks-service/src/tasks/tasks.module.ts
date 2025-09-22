@@ -5,11 +5,13 @@ import { TaskService } from './services/task.service';
 import { Task } from './entities/task.entity';
 import { User } from '../users/entities/user.entity';
 import { SharedModule } from '../shared/shared.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Task, User]),
     SharedModule,
+    AuditModule,
   ],
   controllers: [TaskController],
   providers: [TaskService],

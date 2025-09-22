@@ -6,6 +6,7 @@ import { User } from '../../users/entities/user.entity';
 import { CreateTaskDto, UpdateTaskDto } from '../dto/task.dto';
 import { PaginationDto, PaginatedResponseDto } from '../../shared/dto/pagination.dto';
 import { RabbitMQService } from '../../shared/services/rabbitmq.service';
+import { AuditService } from '../../audit/audit.service';
 
 @Injectable()
 export class TaskService {
@@ -17,6 +18,7 @@ export class TaskService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly rabbitMQService: RabbitMQService,
+    private readonly auditService: AuditService,
   ) {}
 
   async create(createTaskDto: CreateTaskDto, userId: string): Promise<Task> {
@@ -29,10 +31,14 @@ export class TaskService {
 
     const task = this.taskRepository.create({
       ...taskData,
+      createdBy: userId,
       assignedUsers,
     });
 
     const savedTask = await this.taskRepository.save(task);
+
+    // Log audit
+    await this.auditService.logTaskCreated(savedTask, userId);
 
     // Publish task created event
     await this.rabbitMQService.publishTaskEvent({
@@ -49,14 +55,15 @@ export class TaskService {
     return savedTask;
   }
 
-  async findAll(pagination: PaginationDto): Promise<PaginatedResponseDto<Task>> {
+  async findAll(pagination: PaginationDto, userId: string): Promise<PaginatedResponseDto<Task>> {
     const { page = 1, size = 10 } = pagination;
     const skip = (page - 1) * size;
 
     const [tasks, total] = await this.taskRepository.findAndCount({
+      where: { createdBy: userId },
       skip,
       take: size,
-      relations: ['assignedUsers', 'comments', 'comments.user'],
+      relations: ['assignedUsers', 'comments', 'comments.user', 'creator'],
       order: { createdAt: 'DESC' },
     });
 
@@ -71,10 +78,15 @@ export class TaskService {
     };
   }
 
-  async findOne(id: string): Promise<Task> {
+  async findOne(id: string, userId?: string): Promise<Task> {
+    const whereCondition: any = { id };
+    if (userId) {
+      whereCondition.createdBy = userId;
+    }
+
     const task = await this.taskRepository.findOne({
-      where: { id },
-      relations: ['assignedUsers', 'comments', 'comments.user'],
+      where: whereCondition,
+      relations: ['assignedUsers', 'comments', 'comments.user', 'creator'],
     });
 
     if (!task) {
@@ -85,7 +97,8 @@ export class TaskService {
   }
 
   async update(id: string, updateTaskDto: UpdateTaskDto, userId: string): Promise<Task> {
-    const task = await this.findOne(id);
+    const task = await this.findOne(id, userId);
+    const oldValues = { ...task };
     const { assignedUserIds, ...updateData } = updateTaskDto;
 
     // Update assigned users if provided
@@ -100,6 +113,9 @@ export class TaskService {
     Object.assign(task, updateData);
 
     const updatedTask = await this.taskRepository.save(task);
+
+    // Log audit
+    await this.auditService.logTaskUpdated(id, userId, oldValues, updatedTask);
 
     // Publish task updated event
     await this.rabbitMQService.publishTaskEvent({
@@ -118,7 +134,12 @@ export class TaskService {
   }
 
   async remove(id: string, userId: string): Promise<void> {
-    const task = await this.findOne(id);
+    const task = await this.findOne(id, userId);
+    const taskTitle = task.title;
+
+    // Log audit before deletion
+    await this.auditService.logTaskDeleted(id, userId, taskTitle);
+
     await this.taskRepository.remove(task);
 
     // Publish task deleted event

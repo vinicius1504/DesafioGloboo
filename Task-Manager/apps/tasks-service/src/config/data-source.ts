@@ -2,6 +2,8 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import { Task } from '../tasks/entities/task.entity';
 import { Comment } from '../comments/entities/comment.entity';
 import { User } from '../users/entities/user.entity';
+import { AuditLog } from '../audit/entities/audit-log.entity';
+import { AddCreatedByToTasks1732376400000 } from '../migrations/1732376400000-AddCreatedByToTasks';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -10,9 +12,10 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env.DATABASE_USERNAME || 'postgres',
   password: process.env.DATABASE_PASSWORD || 'password',
   database: process.env.DATABASE_NAME || 'tasks_db',
-  entities: [Task, Comment, User],
-  migrations: ['dist/migrations/*.js'],
-  synchronize: false, // Use migrations in production
+  entities: [Task, Comment, User, AuditLog],
+  migrations: [AddCreatedByToTasks1732376400000],
+  synchronize: false, // Disable auto-sync
+  migrationsRun: true, // Auto-run migrations on startup
   logging: process.env.NODE_ENV === 'development',
   // Connection options for better reliability
   extra: {

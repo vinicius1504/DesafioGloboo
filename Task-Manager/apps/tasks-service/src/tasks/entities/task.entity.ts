@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Comment } from '../../comments/entities/comment.entity';
 
@@ -43,6 +43,13 @@ export class Task {
     default: TaskStatus.TODO,
   })
   status: TaskStatus;
+
+  @ManyToOne(() => User, { nullable: false })
+  @JoinColumn({ name: 'createdBy' })
+  creator: User;
+
+  @Column({ name: 'createdBy' })
+  createdBy: string;
 
   @ManyToMany(() => User, { cascade: true })
   @JoinTable({
