@@ -161,6 +161,23 @@ services:
     networks:
       - challenge-network
 
+  # # Web Frontend
+  # web:
+  #   container_name: task-manager-web
+  #   build:
+  #     context: ./apps/web
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - '3000:80'
+  #   environment:
+  #     - NODE_ENV=production
+  #     - VITE_API_URL=http://localhost:3001
+  #   depends_on:
+  #     - api-gateway
+  #   networks:
+  #     - challenge-network
+  #   restart: unless-stopped
+
 
 
 volumes:

@@ -23,24 +23,20 @@ export const useSocket = (): UseSocketReturn => {
     });
 
     newSocket.on('connect', () => {
-      console.log('🔌 Conectado ao Socket.IO');
       setIsConnected(true);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('❌ Desconectado do Socket.IO');
       setIsConnected(false);
     });
 
     // Escutar lista de usuários online
     newSocket.on('users:online', (users: OnlineUser[]) => {
-      console.log('👥 Usuários online:', users);
       setOnlineUsers(users);
     });
 
     // Escutar notificações (removido para evitar duplicação)
     newSocket.on('notification:received', (notification: any) => {
-      console.log('🔔 Notificação recebida via Socket.IO:', notification);
       // Notificações serão tratadas apenas através do notification center
     });
 

@@ -12,19 +12,12 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
+      debugAuth: () => {}, // Adicionado para corresponder ao tipo AuthState
 
       login: async (email: string, password: string) => {
         set({ isLoading: true })
         try {
-          console.log('🚀 Iniciando login com:', { email, password: '***' });
           const response = await authApi.login(email, password)
-
-          console.log('🔑 Login response completo:', response);
-          console.log('🔍 Response keys:', Object.keys(response));
-          console.log('💾 access_token:', response.access_token);
-          console.log('💾 accessToken:', response.access_token);
-          console.log('💾 token:', response.token);
-          console.log('💾 response.user:', response.user);
 
           // Detectar qual campo contém o token
           const rawAccessToken = response.access_token || response.token;
@@ -32,14 +25,7 @@ export const useAuthStore = create<AuthState>()(
           const rawRefreshToken = response.refresh_token;
           const refreshToken = typeof rawRefreshToken === 'string' ? rawRefreshToken : null;
 
-          console.log('🎯 Token detectado:', accessToken);
-          console.log('🎯 Refresh token detectado:', refreshToken);
-          console.log('🎯 Token type:', typeof accessToken);
-          console.log('🎯 Token length:', accessToken?.length);
-
           if (!accessToken) {
-            console.error('❌ NENHUM TOKEN ENCONTRADO NA RESPOSTA!');
-            console.error('❌ Response completo para debug:', JSON.stringify(response, null, 2));
             throw new Error('Token não encontrado na resposta do login');
           }
 
@@ -66,7 +52,6 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false
           })
 
-          console.log('✅ Token salvo no Zustand e localStorage');
 
           // Notificação de sucesso com detalhes
           toast.success(
@@ -210,16 +195,6 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: loading })
       },
 
-      debugAuth: () => {
-        const state = useAuthStore.getState();
-        console.log('🐛 Debug Auth State:', {
-          isAuthenticated: state.isAuthenticated,
-          user: state.user,
-          hasAccessToken: !!state.accessToken,
-          accessTokenLength: state.accessToken?.length,
-          accessTokenPreview: state.accessToken?.substring(0, 20) + '...'
-        });
-      }
     }),
     {
       name: 'auth-storage',

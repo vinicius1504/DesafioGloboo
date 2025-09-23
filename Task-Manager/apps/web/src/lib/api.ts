@@ -81,28 +81,9 @@ export const authApi = {
 // Authenticated API instance
 class AuthenticatedApi {
   private getAuthHeaders(): Record<string, string> {
-    console.log('🔍 Buscando token de autenticação...');
-
     // Primeiro tenta pegar do localStorage direto (mais confiável)
     const token = localStorage.getItem('access_token');
     if (token) {
-      console.log('📦 Token direto encontrado');
-      console.log('🔑 Token preview:', token.substring(0, 50) + '...');
-
-      // Verificar formato do token
-      const parts = token.split('.');
-      console.log('📋 Token parts:', parts.length, 'should be 3 for JWT');
-
-      if (parts.length === 3) {
-        try {
-          const payload = JSON.parse(atob(parts[1]));
-          console.log('📄 Token payload:', payload);
-        } catch (e) {
-          console.warn('❌ Erro ao decodificar payload:', e);
-        }
-      }
-
-      console.log('✅ Usando token do localStorage');
       return { 'Authorization': `Bearer ${token}` };
     }
 
@@ -113,16 +94,13 @@ class AuthenticatedApi {
         const parsed = JSON.parse(authStorage);
         const zustandToken = parsed?.state?.accessToken;
         if (zustandToken) {
-          console.log('📄 Token do Zustand encontrado');
-          console.log('✅ Usando token do Zustand');
           return { 'Authorization': `Bearer ${zustandToken}` };
         }
       } catch (e) {
-        console.warn('❌ Erro ao parsear auth storage:', e);
+        // Silent error handling
       }
     }
 
-    console.log('❌ Nenhum token encontrado!');
     return {};
   }
 
@@ -134,14 +112,9 @@ class AuthenticatedApi {
   }
 
   async post<T>(endpoint: string, data?: any): Promise<T> {
-    const headers = this.getAuthHeaders();
-    console.log('📤 POST Headers being sent:', headers);
-    console.log('📤 POST Endpoint:', endpoint);
-    console.log('📤 POST Data:', data);
-
     return fetchApi<T>(endpoint, {
       method: 'POST',
-      headers: headers,
+      headers: this.getAuthHeaders(),
       body: data ? JSON.stringify(data) : undefined,
     });
   }

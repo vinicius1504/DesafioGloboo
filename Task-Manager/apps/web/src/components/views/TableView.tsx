@@ -61,32 +61,106 @@ const TableView: React.FC<TableViewProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.4 }}
-      className="rounded-xl overflow-hidden"
+      className="rounded-lg sm:rounded-xl overflow-hidden"
       style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}
     >
-      <div className="overflow-x-auto">
+      {/* Mobile Card View */}
+      <div className="block sm:hidden">
+        {tasks.map((task, index) => (
+          <motion.div
+            key={task.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: index * 0.05 }}
+            className="p-4 border-b last:border-b-0"
+            style={{ borderColor: 'var(--border-color)' }}
+          >
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                {task.title}
+              </h3>
+              <div className="flex gap-1 ml-2">
+                <button
+                  onClick={() => onView(task)}
+                  className="p-1 rounded-md transition-colors hover:bg-green-50"
+                  title="Visualizar"
+                >
+                  <Eye className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+                </button>
+                <button
+                  onClick={() => onEdit(task)}
+                  className="p-1 rounded-md transition-colors hover:bg-blue-50"
+                  title="Editar"
+                >
+                  <Edit className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+                </button>
+                <button
+                  onClick={() => onDelete(task.id)}
+                  className="p-1 rounded-md transition-colors hover:bg-red-50"
+                  title="Excluir"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                </button>
+              </div>
+            </div>
+
+            <p className="text-xs mb-3 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
+              {task.description}
+            </p>
+
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span
+                className="px-2 py-1 rounded-full text-xs font-medium text-white"
+                style={{ backgroundColor: getStatusColor(task.status) }}
+              >
+                {statusDisplayMap[task.status]}
+              </span>
+              <span
+                className="px-2 py-1 rounded-full text-xs font-medium text-white"
+                style={{ backgroundColor: getPriorityColor(task.priority) }}
+              >
+                {priorityDisplayMap[task.priority]}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                <span>{new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <User className="w-3 h-3" />
+                <span>{task.assignedUsers?.[0]?.username || 'Não atribuído'}</span>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr style={{ backgroundColor: 'var(--bg-secondary)' }}>
-              <th className="text-left p-4 font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <th className="text-left p-2 sm:p-3 lg:p-4 font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                 Título
               </th>
-              <th className="text-left p-4 font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <th className="text-left p-2 sm:p-3 lg:p-4 font-semibold text-sm hidden lg:table-cell" style={{ color: 'var(--text-primary)' }}>
                 Descrição
               </th>
-              <th className="text-left p-4 font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <th className="text-left p-2 sm:p-3 lg:p-4 font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                 Status
               </th>
-              <th className="text-left p-4 font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <th className="text-left p-2 sm:p-3 lg:p-4 font-semibold text-sm hidden md:table-cell" style={{ color: 'var(--text-primary)' }}>
                 Prioridade
               </th>
-              <th className="text-left p-4 font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <th className="text-left p-2 sm:p-3 lg:p-4 font-semibold text-sm hidden lg:table-cell" style={{ color: 'var(--text-primary)' }}>
                 Prazo
               </th>
-              <th className="text-left p-4 font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <th className="text-left p-2 sm:p-3 lg:p-4 font-semibold text-sm hidden xl:table-cell" style={{ color: 'var(--text-primary)' }}>
                 Responsável
               </th>
-              <th className="text-center p-4 font-semibold" style={{ color: 'var(--text-primary)' }}>
+              <th className="text-center p-2 sm:p-3 lg:p-4 font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                 Ações
               </th>
             </tr>
@@ -104,19 +178,19 @@ const TableView: React.FC<TableViewProps> = ({
                   backgroundColor: 'transparent'
                 }}
               >
-                <td className="p-4">
-                  <div className="font-medium line-clamp-2" style={{ color: 'var(--text-primary)' }}>
+                <td className="p-2 sm:p-3 lg:p-4">
+                  <div className="font-medium line-clamp-2 text-sm" style={{ color: 'var(--text-primary)' }}>
                     {task.title}
                   </div>
                 </td>
-                <td className="p-4">
-                  <div className="line-clamp-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <td className="p-2 sm:p-3 lg:p-4 hidden lg:table-cell">
+                  <div className="line-clamp-2 text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                     {task.description || '-'}
                   </div>
                 </td>
-                <td className="p-4">
+                <td className="p-2 sm:p-3 lg:p-4">
                   <span
-                    className="px-2 py-1 rounded-full text-xs font-medium"
+                    className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-medium"
                     style={{
                       backgroundColor: getStatusColor(task.status) + '20',
                       color: getStatusColor(task.status)
@@ -125,32 +199,32 @@ const TableView: React.FC<TableViewProps> = ({
                     {statusDisplayMap[task.status]}
                   </span>
                 </td>
-                <td className="p-4">
+                <td className="p-2 sm:p-3 lg:p-4 hidden md:table-cell">
                   <div className="flex items-center gap-1">
                     <AlertCircle
                       className="w-3 h-3"
                       style={{ color: getPriorityColor(task.priority) }}
                     />
                     <span
-                      className="text-sm font-medium"
+                      className="text-xs sm:text-sm font-medium"
                       style={{ color: getPriorityColor(task.priority) }}
                     >
                       {priorityDisplayMap[task.priority]}
                     </span>
                   </div>
                 </td>
-                <td className="p-4">
+                <td className="p-2 sm:p-3 lg:p-4 hidden lg:table-cell">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />
-                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    <span className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {formatDate(task.dueDate)}
                     </span>
                   </div>
                 </td>
-                <td className="p-4">
+                <td className="p-2 sm:p-3 lg:p-4 hidden xl:table-cell">
                   <div className="flex items-center gap-1">
                     <User className="w-3 h-3" style={{ color: 'var(--text-muted)' }} />
-                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    <span className="text-xs sm:text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {task.assignedUsers && task.assignedUsers.length > 0
                         ? task.assignedUsers[0].username
                         : '-'
@@ -158,8 +232,8 @@ const TableView: React.FC<TableViewProps> = ({
                     </span>
                   </div>
                 </td>
-                <td className="p-4">
-                  <div className="flex items-center justify-center gap-2">
+                <td className="p-2 sm:p-3 lg:p-4">
+                  <div className="flex items-center justify-center gap-1 sm:gap-2">
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
@@ -167,7 +241,7 @@ const TableView: React.FC<TableViewProps> = ({
                       className="p-1 rounded hover:bg-opacity-10 transition-colors"
                       style={{ color: 'var(--brand-primary)' }}
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </motion.button>
                     <motion.button
                       whileHover={{ scale: 1.1 }}
@@ -176,7 +250,7 @@ const TableView: React.FC<TableViewProps> = ({
                       className="p-1 rounded hover:bg-opacity-10 transition-colors"
                       style={{ color: 'var(--status-review)' }}
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </motion.button>
                     <motion.button
                       whileHover={{ scale: 1.1 }}
@@ -185,7 +259,7 @@ const TableView: React.FC<TableViewProps> = ({
                       className="p-1 rounded hover:bg-opacity-10 transition-colors"
                       style={{ color: 'var(--status-urgent)' }}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </motion.button>
                   </div>
                 </td>

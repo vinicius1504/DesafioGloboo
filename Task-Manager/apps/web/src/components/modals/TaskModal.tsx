@@ -65,7 +65,6 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, onSubmit, task }
       ...formData,
       dueDate: new Date(formData.dueDate).toISOString()
     };
-    console.log('🔍 TaskModal form data being submitted:', submitData);
     onSubmit(submitData);
   };
 

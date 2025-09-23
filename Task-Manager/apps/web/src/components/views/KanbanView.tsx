@@ -17,7 +17,7 @@ interface DraggableTaskProps {
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onDragStart: (task: Task) => void;
-  onDragEnd: (newStatus?: string) => void;
+  onDragEnd: (task: Task, newStatus?: string) => void;
 }
 
 const DraggableTask: React.FC<DraggableTaskProps> = ({
@@ -64,6 +64,10 @@ const DraggableTask: React.FC<DraggableTaskProps> = ({
     const handleMouseUp = (e: MouseEvent) => {
       setIsDragging(false);
 
+      // Detectar drop zone ANTES de resetar os estilos
+      const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
+      const dropZone = elementBelow?.closest('[data-drop-zone]');
+
       if (taskRef.current) {
         taskRef.current.style.position = '';
         taskRef.current.style.left = '';
@@ -74,16 +78,12 @@ const DraggableTask: React.FC<DraggableTaskProps> = ({
         taskRef.current.style.boxShadow = '';
       }
 
-      // Detectar drop zone
-      const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
-      const dropZone = elementBelow?.closest('[data-drop-zone]');
-
       let newStatus = undefined;
       if (dropZone) {
         newStatus = dropZone.getAttribute('data-drop-zone') || undefined;
       }
 
-      onDragEnd(newStatus);
+      onDragEnd(task, newStatus);
 
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -122,6 +122,7 @@ const KanbanView: React.FC<KanbanViewProps> = ({
 }) => {
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const statusColumns = [
     { key: 'TODO', title: 'A Fazer', color: 'var(--status-todo)' },
@@ -138,15 +139,22 @@ const KanbanView: React.FC<KanbanViewProps> = ({
     setDraggedTask(task);
   }, []);
 
-  const handleDragEnd = useCallback((newStatus?: string) => {
-    const task = draggedTask;
+  const handleDragEnd = useCallback(async (task: Task, newStatus?: string) => {
     setDraggedTask(null);
     setHoveredColumn(null);
 
-    if (task && newStatus && newStatus !== task.status) {
-      onUpdateTaskStatus(task.id, newStatus);
+    if (task && newStatus && newStatus !== task.status && !isUpdating) {
+      setIsUpdating(true);
+
+      try {
+        await onUpdateTaskStatus(task.id, newStatus);
+      } catch (error) {
+        // Error handling is done in the store
+      } finally {
+        setIsUpdating(false);
+      }
     }
-  }, [draggedTask, onUpdateTaskStatus]);
+  }, [onUpdateTaskStatus, isUpdating]);
 
   const handleColumnEnter = useCallback((columnKey: string) => {
     if (draggedTask) {
@@ -163,7 +171,7 @@ const KanbanView: React.FC<KanbanViewProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.4 }}
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
     >
       {statusColumns.map((column, index) => {
         const columnTasks = getTasksByStatus(column.key);
@@ -175,16 +183,16 @@ const KanbanView: React.FC<KanbanViewProps> = ({
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
-            className="rounded-xl p-4"
+            className="rounded-lg sm:rounded-xl p-3 sm:p-4"
             style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}
           >
             {/* Column Header */}
-            <div className="flex items-center justify-between mb-4 pb-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
-              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <div className="flex items-center justify-between mb-3 sm:mb-4 pb-2 sm:pb-3 border-b" style={{ borderColor: 'var(--border-color)' }}>
+              <h3 className="font-semibold text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>
                 {column.title}
               </h3>
               <span
-                className="text-xs px-2 py-1 rounded-full font-medium"
+                className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium"
                 style={{
                   backgroundColor: column.color + '20',
                   color: column.color
@@ -197,16 +205,22 @@ const KanbanView: React.FC<KanbanViewProps> = ({
             {/* Droppable Area */}
             <div
               data-drop-zone={column.key}
-              className={`space-y-3 min-h-[400px] p-3 rounded-lg transition-all duration-200 ${
-                isHovered ? 'ring-2' : ''
+              className={`space-y-2 sm:space-y-3 min-h-[300px] sm:min-h-[400px] p-2 sm:p-3 rounded-lg transition-all duration-200 relative ${
+                isHovered ? 'ring-2 ring-opacity-50' : ''
               }`}
               style={{
                 backgroundColor: isHovered ? column.color + '15' : 'transparent',
                 borderColor: isHovered ? column.color : 'transparent',
+                ringColor: isHovered ? column.color : 'transparent'
               }}
               onMouseEnter={() => handleColumnEnter(column.key)}
               onMouseLeave={handleColumnLeave}
             >
+              {/* Overlay invisível para melhor detecção de drop */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                data-drop-zone={column.key}
+              />
               {columnTasks.map((task) => (
                 <DraggableTask
                   key={task.id}
@@ -219,20 +233,35 @@ const KanbanView: React.FC<KanbanViewProps> = ({
                 />
               ))}
 
+              {/* Drop indicator quando hovering */}
+              {isHovered && (
+                <div
+                  className="border-2 border-dashed rounded-lg p-4 mb-2 text-center"
+                  style={{
+                    borderColor: column.color,
+                    backgroundColor: column.color + '10'
+                  }}
+                >
+                  <p className="text-sm font-medium" style={{ color: column.color }}>
+                    ✨ Solte aqui para mover para "{column.title}"
+                  </p>
+                </div>
+              )}
+
               {/* Empty state */}
-              {columnTasks.length === 0 && (
-                <div className="text-center py-12">
+              {columnTasks.length === 0 && !isHovered && (
+                <div className="text-center py-8 sm:py-12">
                   <div
-                    className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center"
+                    className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-full flex items-center justify-center"
                     style={{ backgroundColor: column.color + '15' }}
                   >
                     <div
-                      className="w-6 h-6 rounded-full"
+                      className="w-4 h-4 sm:w-6 sm:h-6 rounded-full"
                       style={{ backgroundColor: column.color + '40' }}
                     />
                   </div>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    {isHovered ? '✨ Solte aqui' : 'Vazio'}
+                  <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
+                    Vazio
                   </p>
                 </div>
               )}

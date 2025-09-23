@@ -3,13 +3,13 @@ import { motion } from 'framer-motion';
 import { useNavigate } from '@tanstack/react-router';
 import { useTheme } from '@/providers';
 import { useAuthStore } from '@/stores/auth';
-import { Sun, Moon, Search, Plus, BarChart3, Bell, Grid3X3, Kanban, Table } from 'lucide-react';
+import { useTaskStore } from '@/stores/tasks';
+import { Search, Plus, BarChart3, Grid3X3, Kanban, Table } from 'lucide-react';
 import { TaskCard, TaskModal, TaskViewModal, NotificationCenter, ConfirmModal } from '@/components';
 import KanbanView from '@/components/views/KanbanView';
 import TableView from '@/components/views/TableView';
 import Header from '@/components/layout/Header';
 import { SocketProvider } from '@/providers';
-import { api } from '@/lib/api';
 import { useNotificationCenter } from '@/hooks/useNotificationCenter';
 import type { Task } from '@/types';
 
@@ -17,15 +17,14 @@ import type { Task } from '@/types';
 const DashboardContent: React.FC = () => {
   const navigate = useNavigate();
   useTheme();
-  const { user, logout, debugAuth, isAuthenticated } = useAuthStore();
+  const { user, logout, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
       navigate({ to: '/login' });
     }
   }, [isAuthenticated, user, navigate]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { tasks, loading, fetchTasks, createTask, updateTask, deleteTask, updateTaskStatus } = useTaskStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Todos os Status');
   const [priorityFilter, setPriorityFilter] = useState('Todas as Prioridades');
@@ -53,71 +52,28 @@ const DashboardContent: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      fetchTasks();
+      fetchTasks().catch(error => {
+        // Verificar se é erro de autenticação
+        if (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 401) {
+          addNotification({
+            message: 'Sessão expirada. Faça login novamente.',
+            type: 'error'
+          });
+          logout(false); // Logout sem toast para evitar conflito
+          navigate({ to: '/login' });
+        } else {
+          addNotification({
+            message: 'Erro de conexão ao carregar tarefas. Verifique sua internet.',
+            type: 'error'
+          });
+        }
+      });
     }
-  }, [isAuthenticated, user]);
-
-  const fetchTasks = async () => {
-    if (!isAuthenticated || !user) {
-      console.log('🚫 Usuário não autenticado, não buscando tarefas');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      console.log('🔄 Iniciando fetchTasks...');
-      const response = await api.get<{data: Task[], total: number, page: number, size: number, totalPages: number}>('/api/tasks');
-      console.log('📋 Resposta completa do backend:', response);
-
-      // Extrair o array de tarefas do objeto de paginação
-      const tasksArray = response.data || [];
-      console.log('📊 Tarefas extraídas:', tasksArray);
-      console.log('📊 Quantidade de tarefas:', tasksArray.length);
-
-      setTasks(tasksArray);
-    } catch (error) {
-      console.error('❌ Erro ao buscar tarefas:', error);
-
-      // Verificar se é erro de autenticação
-      if (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 401) {
-        addNotification({
-          message: 'Sessão expirada. Faça login novamente.',
-          type: 'error'
-        });
-        logout(false); // Logout sem toast para evitar conflito
-        navigate({ to: '/login' });
-      } else {
-        addNotification({
-          message: 'Erro de conexão ao carregar tarefas. Verifique sua internet.',
-          type: 'error'
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isAuthenticated, user, fetchTasks, addNotification, logout, navigate]);
 
   const handleCreateTask = async (taskData: Partial<Task>) => {
     try {
-      // Clean data and convert frontend format to backend format
-      const backendData: any = {
-        title: taskData.title,
-        description: taskData.description,
-        status: taskData.status,
-        priority: taskData.priority,
-        dueDate: taskData.dueDate
-      };
-
-      // Only add assignedUserIds if we have assigned users
-      if (taskData.assignedUsers && taskData.assignedUsers.length > 0) {
-        backendData.assignedUserIds = taskData.assignedUsers.map(user => user.id);
-      }
-
-      console.log('🚀 Sending clean backend data:', backendData);
-
-      const response = await api.post<Task>('/api/tasks', backendData);
-      setTasks(prev => [...prev, response]);
+      await createTask(taskData);
 
       // Adicionar notificação ao centro de notificações
       addNotification({
@@ -127,8 +83,6 @@ const DashboardContent: React.FC = () => {
 
       setIsTaskModalOpen(false);
     } catch (error) {
-      console.error('Erro ao criar tarefa:', error);
-
       // Adicionar notificação de erro ao centro de notificações
       addNotification({
         message: 'Erro ao criar tarefa. Tente novamente.',
@@ -141,26 +95,7 @@ const DashboardContent: React.FC = () => {
     if (!editingTask) return;
 
     try {
-      // Clean data and convert frontend format to backend format
-      const backendData: any = {
-        title: taskData.title,
-        description: taskData.description,
-        status: taskData.status,
-        priority: taskData.priority,
-        dueDate: taskData.dueDate
-      };
-
-      // Only add assignedUserIds if we have assigned users
-      if (taskData.assignedUsers && taskData.assignedUsers.length > 0) {
-        backendData.assignedUserIds = taskData.assignedUsers.map(user => user.id);
-      }
-
-      console.log('✏️ Sending clean edit data:', backendData);
-
-      const response = await api.put<Task>(`/api/tasks/${editingTask.id}`, backendData);
-      setTasks(prev => prev.map(task =>
-        task.id === editingTask.id ? response : task
-      ));
+      await updateTask(editingTask.id, taskData);
 
       // Adicionar notificação ao centro de notificações
       addNotification({
@@ -171,8 +106,6 @@ const DashboardContent: React.FC = () => {
       setEditingTask(null);
       setIsTaskModalOpen(false);
     } catch (error) {
-      console.error('Erro ao editar tarefa:', error);
-
       // Adicionar notificação de erro ao centro de notificações
       addNotification({
         message: 'Erro ao editar tarefa. Tente novamente.',
@@ -193,8 +126,7 @@ const DashboardContent: React.FC = () => {
     if (!taskToDelete) return;
 
     try {
-      await api.delete(`/api/tasks/${taskToDelete.id}`);
-      setTasks(prev => prev.filter(task => task.id !== taskToDelete.id));
+      await deleteTask(taskToDelete.id);
 
       // Adicionar notificação ao centro de notificações
       addNotification({
@@ -202,8 +134,6 @@ const DashboardContent: React.FC = () => {
         type: 'success'
       });
     } catch (error) {
-      console.error('Erro ao excluir tarefa:', error);
-
       // Adicionar notificação de erro ao centro de notificações
       addNotification({
         message: 'Erro ao excluir tarefa. Tente novamente.',
@@ -217,26 +147,7 @@ const DashboardContent: React.FC = () => {
     if (!taskToUpdate) return;
 
     try {
-      // Preparar dados para o backend
-      const backendData: any = {
-        title: taskToUpdate.title,
-        description: taskToUpdate.description,
-        status: newStatus,
-        priority: taskToUpdate.priority,
-        dueDate: taskToUpdate.dueDate
-      };
-
-      // Adicionar assignedUserIds se existirem
-      if (taskToUpdate.assignedUsers && taskToUpdate.assignedUsers.length > 0) {
-        backendData.assignedUserIds = taskToUpdate.assignedUsers.map(user => user.id);
-      }
-
-      const response = await api.put<Task>(`/api/tasks/${taskId}`, backendData);
-
-      // Atualizar a lista de tarefas
-      setTasks(prev => prev.map(task =>
-        task.id === taskId ? response : task
-      ));
+      await updateTaskStatus(taskId, newStatus);
 
       // Mapear status para display
       const statusDisplayMap: Record<'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE', string> = {
@@ -252,8 +163,6 @@ const DashboardContent: React.FC = () => {
         type: 'success'
       });
     } catch (error) {
-      console.error('Erro ao atualizar status da tarefa:', error);
-
       // Adicionar notificação de erro
       addNotification({
         message: 'Erro ao mover tarefa. Tente novamente.',
@@ -338,21 +247,145 @@ const DashboardContent: React.FC = () => {
       />
 
       {/* Main Content */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="max-w-7xl mx-auto px-6 py-8"
-      >
+      <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="max-w-7xl mx-auto py-3 sm:py-6"
+        >
         {/* Controls */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
-          className="rounded-2xl p-6 mb-8 shadow-sm"
+          className="rounded-lg sm:rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm"
           style={{ backgroundColor: 'var(--bg-card)' }}
         >
-          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between mb-6">
+          {/* MOBILE LAYOUT */}
+          <div className="block lg:hidden space-y-4 mb-6">
+            {/* Search */}
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="Buscar tarefas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2"
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-primary)',
+                }}
+              />
+            </div>
+
+            {/* Filters Row 1 */}
+            <div className="grid grid-cols-2 gap-3">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 text-sm"
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                <option>Todos os Status</option>
+                <option value="A Fazer">A Fazer</option>
+                <option value="Em Progresso">Em Progresso</option>
+                <option value="Em Revisão">Em Revisão</option>
+                <option value="Concluído">Concluído</option>
+              </select>
+
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+                className="px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 text-sm"
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                <option>Todas as Prioridades</option>
+                <option value="Baixa">Baixa</option>
+                <option value="Média">Média</option>
+                <option value="Alta">Alta</option>
+                <option value="Urgente">Urgente</option>
+              </select>
+            </div>
+
+            {/* Filters Row 2 */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowDashboard(!showDashboard)}
+                className="px-3 py-2 rounded-lg border transition-colors flex items-center justify-center gap-2 text-sm"
+                style={{
+                  backgroundColor: showDashboard ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                  borderColor: 'var(--border-color)',
+                  color: showDashboard ? 'white' : 'var(--text-primary)'
+                }}
+              >
+                <BarChart3 className="w-4 h-4" />
+                Dashboard
+              </button>
+
+              <button
+                onClick={clearFilters}
+                className="px-3 py-2 text-sm rounded-lg transition-colors border"
+                style={{
+                  color: 'var(--text-muted)',
+                  borderColor: 'var(--border-color)',
+                  backgroundColor: 'var(--bg-secondary)'
+                }}
+              >
+                Limpar Filtros
+              </button>
+            </div>
+
+            {/* View Mode - Mobile */}
+            <div className="flex rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+              <button
+                onClick={() => setViewMode('cards')}
+                className="flex-1 py-2.5 flex items-center justify-center gap-2 transition-colors text-sm"
+                style={{
+                  backgroundColor: viewMode === 'cards' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                  color: viewMode === 'cards' ? 'white' : 'var(--text-primary)'
+                }}
+              >
+                <Grid3X3 className="w-4 h-4" />
+                Cards
+              </button>
+              <button
+                onClick={() => setViewMode('kanban')}
+                className="flex-1 py-2.5 flex items-center justify-center gap-2 transition-colors text-sm"
+                style={{
+                  backgroundColor: viewMode === 'kanban' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                  color: viewMode === 'kanban' ? 'white' : 'var(--text-primary)'
+                }}
+              >
+                <Kanban className="w-4 h-4" />
+                Kanban
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className="flex-1 py-2.5 flex items-center justify-center gap-2 transition-colors text-sm"
+                style={{
+                  backgroundColor: viewMode === 'table' ? 'var(--brand-primary)' : 'var(--bg-secondary)',
+                  color: viewMode === 'table' ? 'white' : 'var(--text-primary)'
+                }}
+              >
+                <Table className="w-4 h-4" />
+                Tabela
+              </button>
+            </div>
+          </div>
+
+          {/* DESKTOP LAYOUT */}
+          <div className="hidden lg:flex items-center justify-between mb-6">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
@@ -471,7 +504,7 @@ const DashboardContent: React.FC = () => {
             onClick={openCreateModal}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full py-3 rounded-lg flex items-center justify-center gap-2"
+            className="w-full py-3 lg:py-3 rounded-lg flex items-center justify-center gap-2"
             style={{ backgroundColor: 'var(--brand-primary)', color: 'white' }}
           >
             <Plus className="w-5 h-5" />
@@ -485,43 +518,43 @@ const DashboardContent: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
-            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+            className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-6 mb-6 lg:mb-8"
           >
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="p-6 rounded-xl"
+              className="p-4 lg:p-6 rounded-lg lg:rounded-xl"
               style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}
             >
-              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Total</h3>
-              <p className="text-3xl font-bold" style={{ color: 'var(--brand-primary)' }}>{tasks.length}</p>
+              <h3 className="text-sm lg:text-lg font-semibold mb-1 lg:mb-2" style={{ color: 'var(--text-primary)' }}>Total</h3>
+              <p className="text-xl lg:text-3xl font-bold" style={{ color: 'var(--brand-primary)' }}>{tasks.length}</p>
             </motion.div>
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="p-6 rounded-xl"
+              className="p-4 lg:p-6 rounded-lg lg:rounded-xl"
               style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}
             >
-              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Em Progresso</h3>
-              <p className="text-3xl font-bold" style={{ color: 'var(--status-progress)' }}>
+              <h3 className="text-sm lg:text-lg font-semibold mb-1 lg:mb-2" style={{ color: 'var(--text-primary)' }}>Em Progresso</h3>
+              <p className="text-xl lg:text-3xl font-bold" style={{ color: 'var(--status-progress)' }}>
                 {tasks.filter(t => t.status === 'IN_PROGRESS').length}
               </p>
             </motion.div>
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="p-6 rounded-xl"
+              className="p-4 lg:p-6 rounded-lg lg:rounded-xl"
               style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}
             >
-              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Pendentes</h3>
-              <p className="text-3xl font-bold" style={{ color: 'var(--status-todo)' }}>
+              <h3 className="text-sm lg:text-lg font-semibold mb-1 lg:mb-2" style={{ color: 'var(--text-primary)' }}>Pendentes</h3>
+              <p className="text-xl lg:text-3xl font-bold" style={{ color: 'var(--status-todo)' }}>
                 {tasks.filter(t => t.status === 'TODO').length}
               </p>
             </motion.div>
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="p-6 rounded-xl"
+              className="p-4 lg:p-6 rounded-lg lg:rounded-xl"
               style={{ backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow)' }}
             >
-              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Urgentes</h3>
-              <p className="text-3xl font-bold" style={{ color: 'var(--status-urgent)' }}>
+              <h3 className="text-sm lg:text-lg font-semibold mb-1 lg:mb-2" style={{ color: 'var(--text-primary)' }}>Urgentes</h3>
+              <p className="text-xl lg:text-3xl font-bold" style={{ color: 'var(--status-urgent)' }}>
                 {tasks.filter(t => t.status === 'DONE').length}
               </p>
             </motion.div>
@@ -536,7 +569,7 @@ const DashboardContent: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.4 }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6"
               >
                 {filteredTasks.map((task) => (
                   <TaskCard
@@ -587,7 +620,8 @@ const DashboardContent: React.FC = () => {
             </p>
           </motion.div>
         )}
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* Task Modal */}
       {isTaskModalOpen && (
