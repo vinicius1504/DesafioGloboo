@@ -6,29 +6,27 @@
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
 [![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://swagger.io/)
 [![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
+[![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-> Sistema completo de gerenciamento de tarefas com arquitetura de microserviços, API Gateway inteligente e comunicação assíncrona via RabbitMQ.
-
----
-
-## 📋 Visão Geral
-
-O **Task Manager** é uma aplicação robusta construída com arquitetura de microserviços usando **NestJS**, **PostgreSQL**, **RabbitMQ** e **Docker**. O sistema oferece:
-
-- 🔐 **Autenticação JWT** com Guards e Passport
-- 🌐 **API Gateway** com rate limiting e roteamento inteligente
-- 📡 **Comunicação assíncrona** entre microserviços via RabbitMQ
-- 📚 **Documentação Swagger** completa e interativa
-- ⚡ **WebSocket** para notificações em tempo real
-- 🗄️ **Migrations TypeORM** para controle de versão do banco
-- 🐳 **Containerização completa** com Docker Compose
+> Sistema completo de gerenciamento de tarefas com arquitetura de microserviços, API Gateway inteligente, comunicação assíncrona via RabbitMQ e frontend moderno com React + TanStack Router.
 
 ---
 
-## 🏗️ Arquitetura dos Microserviços
+## 🎥 Preview do Sistema
 
+### 🖥️ Interface Web (React + shadcn/ui)
+![Task Manager Web](https://via.placeholder.com/800x400/4F46E5/FFFFFF?text=Task+Manager+Web+Preview)  
+*Interface moderna com autenticação modal, lista de tarefas com filtros, detalhe com comentários e notificações em tempo real.*
+
+### � Arquitetura Visual
 ```mermaid
 graph TB
+    subgraph "Frontend (React)"
+        WEB[Web App<br/>Port: 5173<br/>React + TanStack Router<br/>shadcn/ui + Tailwind]
+    end
+
     subgraph "API Gateway"
         GW[API Gateway<br/>Port: 3001<br/>Rate Limiting: 10 req/seg]
     end
@@ -45,6 +43,7 @@ graph TB
         REDIS[(Redis<br/>Port: 6379)]
     end
 
+    WEB --> GW
     GW --> AUTH
     GW --> TASKS
     GW --> NOTIF
@@ -61,85 +60,166 @@ graph TB
     NOTIF --> REDIS
 ```
 
+---
+
+## ✨ Destaques do Sistema
+
+<div align="center">
+
+### 🔐 Autenticação Segura
+**JWT + Guards + Passport** | **Rate Limiting** | **Hashing bcrypt**
+
+### 🎨 Frontend Moderno
+**React + TypeScript** | **TanStack Router** | **shadcn/ui + Tailwind CSS**  
+**Modal Login/Register** | **Validação react-hook-form + Zod** | **Skeleton Loaders**
+
+### 📡 Comunicação em Tempo Real
+**WebSocket Gateway** | **RabbitMQ Events** | **Toast Notifications**
+
+### 🏗️ Backend Robusto
+**NestJS Microserviços** | **PostgreSQL + TypeORM** | **Swagger Docs**  
+**Docker Containerização** | **Migrations** | **Health Checks**
+
+</div>
+
+---
+
+## 📋 Visão Geral
+
+O **Task Manager** é uma aplicação full-stack robusta construída com arquitetura de microserviços usando **NestJS**, **PostgreSQL**, **RabbitMQ**, **Docker** e **React**. O sistema oferece:
+
+- 🔐 **Autenticação JWT** com Guards e Passport
+- 🌐 **API Gateway** com rate limiting e roteamento inteligente
+- 📡 **Comunicação assíncrona** entre microserviços via RabbitMQ
+- 📚 **Documentação Swagger** completa e interativa
+- ⚡ **WebSocket** para notificações em tempo real
+- 🖥️ **Frontend React** com UI moderna e responsiva
+- 🗄️ **Migrations TypeORM** para controle de versão do banco
+- 🐳 **Containerização completa** com Docker Compose
+
+---
+
+    AUTH --> DB
+    TASKS --> DB
+    NOTIF --> DB
+
+    AUTH <--> MQ
+    TASKS <--> MQ
+    NOTIF <--> MQ
+
+    TASKS --> REDIS
+    NOTIF --> REDIS
+```
+
 ### 📊 Fluxo de Comunicação
 
-1. **Cliente** → **API Gateway** (rota e rate limiting)
-2. **API Gateway** → **Microserviço específico** (HTTP)
-3. **Microserviços** ↔ **RabbitMQ** (eventos assíncronos)
-4. **Microserviços** → **PostgreSQL** (persistência)
-5. **Microserviços** → **Redis** (cache/sessões)
+1. **🖥️ Cliente** → **🌐 API Gateway** (rota e rate limiting)
+2. **🌐 API Gateway** → **🏗️ Microserviço específico** (HTTP)
+3. **🏗️ Microserviços** ↔ **📡 RabbitMQ** (eventos assíncronos)
+4. **🏗️ Microserviços** → **🗄️ PostgreSQL** (persistência)
+5. **🏗️ Microserviços** → **⚡ Redis** (cache/sessões)
 
 ---
 
 ## 🎯 Funcionalidades Principais
 
-### 🔐 Autenticação e Segurança
-- ✅ **JWT com Guards e Passport**
-- ✅ **Rate Limiting** (10 req/seg no Gateway)
-- ✅ **Validação com class-validator**
-- ✅ **Hashing de senhas** com bcrypt
+<div align="center">
 
-### 📝 Gerenciamento de Tarefas
-- ✅ **CRUD completo** de tarefas
-- ✅ **Sistema de comentários**
-- ✅ **Atribuição de usuários**
-- ✅ **Prioridades e status**
-- ✅ **Paginação eficiente**
+| 🔐 Autenticação & Segurança | 📝 Gerenciamento de Tarefas | 📡 Tempo Real | 🎨 Frontend |
+|-----------------------------|-----------------------------|---------------|-------------|
+| ✅ JWT + Guards + Passport | ✅ CRUD completo de tarefas | ✅ WebSocket Gateway | ✅ React + TypeScript |
+| ✅ Rate Limiting (10 req/seg) | ✅ Sistema de comentários | ✅ RabbitMQ Events | ✅ TanStack Router |
+| ✅ Validação class-validator | ✅ Atribuição de usuários | ✅ Event-driven arch | ✅ shadcn/ui + Tailwind |
+| ✅ Hashing bcrypt | ✅ Prioridades e status | ✅ Message patterns | ✅ Modal Login/Register |
+| | ✅ Paginação eficiente | ✅ Toast Notifications | ✅ Skeleton Loaders |
 
-### 📡 Comunicação em Tempo Real
-- ✅ **WebSocket Gateway** para eventos
-- ✅ **RabbitMQ** para comunicação assíncrona
-- ✅ **Event-driven architecture**
-- ✅ **Message patterns** padronizados
+</div>
 
-### 📚 Documentação e Qualidade
+### 📚 Qualidade & Documentação
 - ✅ **Swagger completo** no Gateway
 - ✅ **DTOs com class-transformer**
 - ✅ **Migrations TypeORM**
 - ✅ **Testes automatizados**
+- ✅ **ESLint + Prettier**
+- ✅ **TypeScript obrigatório**
+
+---
 
 ---
 
 ## 🚀 Instalação e Execução
 
-### Pré-requisitos
-- ✅ **Docker** e **Docker Compose**
-- ✅ **Node.js 18+** (opcional para desenvolvimento)
-- ✅ **Git**
+---
 
-### ⚡ Execução Rápida
+## 🚀 Instalação e Execução
+
+### 📋 Pré-requisitos
+
+<div align="center">
+
+| Ferramenta | Versão | Status |
+|------------|--------|--------|
+| 🐳 **Docker** | 20+ | ![Docker](https://img.shields.io/badge/Required-2496ED?style=flat&logo=docker) |
+| 🐙 **Docker Compose** | 2.0+ | ![Docker Compose](https://img.shields.io/badge/Required-2496ED?style=flat&logo=docker) |
+| 🟢 **Node.js** | 18+ | ![Node.js](https://img.shields.io/badge/Optional-339933?style=flat&logo=node.js) |
+| 📚 **Git** | Latest | ![Git](https://img.shields.io/badge/Required-F05032?style=flat&logo=git) |
+
+</div>
+
+### ⚡ Execução Rápida (Docker)
+
+<div align="center">
 
 ```bash
-# 1. Clone o repositório
+# 🚀 Clone e execute em 3 passos
 git clone https://github.com/vinicius1504/DesafioGloboo.git
 cd DesafioGloboo/Task-Manager
-
-# 2. Execute com Docker (recomendado)
 docker-compose up --build -d
 
-# 3. Acesse as aplicações
-echo "🌐 API Gateway: http://localhost:3001"
-echo "📚 Swagger Docs: http://localhost:3001/api"
-echo "🔐 Auth Service: http://localhost:3002"
-echo "📝 Tasks Service: http://localhost:3003"
+# ✅ Pronto! Acesse:
+echo "🌐 Frontend:     http://localhost:5173"
+echo "🌐 API Gateway:  http://localhost:3001"
+echo "📚 Swagger:      http://localhost:3001/api"
+echo "🔐 Auth:         http://localhost:3002"
+echo "📝 Tasks:        http://localhost:3003"
 echo "🔔 Notifications: http://localhost:3004"
 ```
+
+</div>
 
 ### 🛠️ Desenvolvimento Local
 
 ```bash
-# Instalar dependências
+# 📦 Instalar dependências (monorepo)
 npm install
 
-# Executar todos os serviços
+# 🚀 Executar tudo
 npm run dev
 
-# Ou executar serviços específicos
+# 🎯 Ou serviços específicos
 npm run dev --filter=auth-service
 npm run dev --filter=tasks-service
 npm run dev --filter=notifications-service
 npm run dev --filter=api-gateway
+npm run dev --filter=web  # Frontend React
 ```
+
+### 🐳 Status dos Containers
+
+```bash
+# 📊 Verificar containers
+docker-compose ps
+
+# 📋 Logs em tempo real
+docker-compose logs -f
+
+# 🔄 Reiniciar serviço específico
+docker-compose restart tasks-service
+```
+
+---
+
+---
 
 ---
 
@@ -147,27 +227,22 @@ npm run dev --filter=api-gateway
 
 ### 🔗 Endpoints Principais
 
-#### Autenticação (`/api/auth`)
-```http
-POST   /api/auth/register    # Registrar novo usuário
-POST   /api/auth/login       # Login e geração de JWT
-POST   /api/auth/refresh     # Refresh token JWT
-```
+<div align="center">
 
-#### Tarefas (`/api/tasks`)
-```http
-GET    /api/tasks?page=1&size=10     # Listar tarefas (paginação)
-POST   /api/tasks                     # Criar tarefa → evento task.created
-GET    /api/tasks/:id                 # Buscar tarefa por ID
-PUT    /api/tasks/:id                 # Atualizar tarefa → evento task.updated
-DELETE /api/tasks/:id                 # Excluir tarefa → evento task.deleted
-```
+| Método | Endpoint | Descrição | Serviço |
+|--------|----------|-----------|---------|
+| 🔐 **POST** | `/api/auth/register` | Registrar novo usuário | Auth |
+| 🔐 **POST** | `/api/auth/login` | Login e geração de JWT | Auth |
+| 🔐 **POST** | `/api/auth/refresh` | Refresh token JWT | Auth |
+| 📝 **GET** | `/api/tasks?page=1&size=10` | Listar tarefas (paginação) | Tasks |
+| 📝 **POST** | `/api/tasks` | Criar tarefa → evento `task.created` | Tasks |
+| 📝 **GET** | `/api/tasks/:id` | Buscar tarefa por ID | Tasks |
+| 📝 **PUT** | `/api/tasks/:id` | Atualizar tarefa → evento `task.updated` | Tasks |
+| 📝 **DELETE** | `/api/tasks/:id` | Excluir tarefa → evento `task.deleted` | Tasks |
+| 💬 **POST** | `/api/tasks/:id/comments` | Criar comentário → evento `comment.created` | Tasks |
+| 💬 **GET** | `/api/tasks/:id/comments?page=1&size=10` | Listar comentários (paginação) | Tasks |
 
-#### Comentários (`/api/tasks/:id/comments`)
-```http
-POST   /api/tasks/:id/comments        # Criar comentário → evento comment.created
-GET    /api/tasks/:id/comments?page=1&size=10  # Listar comentários (paginação)
-```
+</div>
 
 ### 📋 Exemplos de Uso
 
@@ -427,7 +502,59 @@ JWT_SECRET=your-super-secret-key
 
 ---
 
-## 📄 Licença
+## �️ Screenshots & Demonstração
+
+<div align="center">
+
+### 📱 Interface de Login
+![Login Modal](https://via.placeholder.com/400x300/4F46E5/FFFFFF?text=Login+Modal)  
+*Modal elegante de autenticação com validação em tempo real*
+
+### 📋 Dashboard de Tarefas
+![Task Dashboard](https://via.placeholder.com/400x300/10B981/FFFFFF?text=Task+Dashboard)  
+*Lista de tarefas com filtros, busca e paginação*
+
+### 💬 Detalhes da Tarefa
+![Task Details](https://via.placeholder.com/400x300/F59E0B/FFFFFF?text=Task+Details)  
+*Visualização detalhada com sistema de comentários*
+
+### 📊 Arquitetura em Ação
+![Architecture](https://via.placeholder.com/400x300/8B5CF6/FFFFFF?text=System+Architecture)  
+*Microserviços comunicando via RabbitMQ e WebSocket*
+
+</div>
+
+---
+
+## 🗺️ Roadmap & Próximos Passos
+
+<div align="center">
+
+### 🚀 Em Desenvolvimento
+- [ ] **Dashboard Analytics** - Gráficos e métricas de produtividade
+- [ ] **Notificações Push** - Integração com Firebase/PWA
+- [ ] **Tema Dark/Light** - Alternância de temas no frontend
+- [ ] **Export/Import** - CSV/JSON para tarefas
+
+### 🔮 Planejado
+- [ ] **Mobile App** - React Native/Expo
+- [ ] **Integração Calendário** - Google Calendar/Outlook
+- [ ] **Time Tracking** - Pomodoro e relatórios de tempo
+- [ ] **Colaboração** - Compartilhamento de tarefas em equipe
+- [ ] **API GraphQL** - Alternativa ao REST
+
+### 🎯 Melhorias Técnicas
+- [ ] **Monitoring** - Prometheus + Grafana
+- [ ] **CI/CD** - GitHub Actions + Deploy automático
+- [ ] **Cache Avançado** - Redis clusters
+- [ ] **Testes E2E** - Cypress/Playwright
+- [ ] **Documentação API** - OpenAPI 3.0 completa
+
+</div>
+
+---
+
+## �📄 Licença
 
 Este projeto está sob a **licença MIT**. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
@@ -441,11 +568,19 @@ Este projeto está sob a **licença MIT**. Veja o arquivo [LICENSE](LICENSE) par
 
 ## 🙏 Agradecimentos
 
-- **NestJS** pela estrutura incrível de microserviços
-- **RabbitMQ** pela comunicação assíncrona robusta
-- **PostgreSQL** pelo banco de dados confiável
-- **Docker** pela containerização simplificada
-- **Turborepo** pelo gerenciamento eficiente de monorepo
+<div align="center">
+
+| Tecnologia | Propósito | Agradecimento |
+|------------|-----------|---------------|
+| 🏗️ **NestJS** | Framework backend | Estrutura incrível de microserviços |
+| 📡 **RabbitMQ** | Message broker | Comunicação assíncrona robusta |
+| 🗄️ **PostgreSQL** | Banco de dados | Persistência confiável |
+| 🐳 **Docker** | Containerização | Simplificação de deploy |
+| ⚡ **Turborepo** | Monorepo | Gerenciamento eficiente |
+| ⚛️ **React** | Frontend | UI moderna e interativa |
+| 🎨 **Tailwind CSS** | Styling | Design system elegante |
+
+</div>
 
 ---
 
@@ -455,11 +590,21 @@ Para dúvidas ou sugestões:
 - 📧 **Email**: seu-email@example.com
 - 💬 **Issues**: [GitHub Issues](https://github.com/vinicius1504/DesafioGloboo/issues)
 - 📖 **Documentação**: http://localhost:3001/api
+- 🌐 **Demo**: http://localhost:5173 (frontend)
 
 ---
+
+<div align="center">
+
+## 🌟 Contribua com o Projeto!
 
 ⭐ **Se este projeto te ajudou, dê uma estrela no GitHub!** ⭐
 
+[![GitHub stars](https://img.shields.io/github/stars/vinicius1504/DesafioGloboo?style=social)](https://github.com/vinicius1504/DesafioGloboo)
+[![GitHub forks](https://img.shields.io/github/forks/vinicius1504/DesafioGloboo?style=social)](https://github.com/vinicius1504/DesafioGloboo)
+
 ---
 
-*Desenvolvido com ❤️ usando NestJS, PostgreSQL, RabbitMQ e Docker*
+*Desenvolvido com ❤️ usando NestJS, PostgreSQL, RabbitMQ, Docker & React*
+
+</div>
